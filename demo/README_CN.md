@@ -20,7 +20,7 @@ uv sync --project python          # 第 2 步，PSD 那段
 npx playwright install chromium   # 第 5–7 步，视觉那段
 ```
 
-热机状态约 5 秒跑完。然后打开这两个目录 —— 它们就是 demo 的重点：
+热机状态约 5 秒跑完。然后打开这三个目录 —— 它们就是 demo 的重点：
 
 ```
 demo/out/generated/images/  每个 attachment 一张散图 PNG —— File -> Import Data 就是对着它们解析

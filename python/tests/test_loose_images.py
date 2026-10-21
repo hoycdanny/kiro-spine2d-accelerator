@@ -73,6 +73,35 @@ class TestWriteLooseImages:
         assert not (folder / "cape.png").exists()
         assert (folder / "head.png").exists()
 
+    def test_a_case_variant_stale_png_never_costs_the_fresh_image(
+        self, tmp_path: Path
+    ) -> None:
+        folder = tmp_path / "images"
+        folder.mkdir(parents=True)
+        Image.new("RGBA", (10, 10)).save(folder / "HEAD.PNG")
+
+        result = write_loose_images(tmp_path, {"head": Image.new("RGBA", (60, 90))})
+
+        # On a case-insensitive filesystem HEAD.PNG *is* head.png, so the save
+        # overwrote it and nothing may be pruned; on a case-sensitive one it is
+        # a genuine leftover and goes. Either way the attachment image stands.
+        written = Image.open(folder / "head.png")
+        assert (written.width, written.height) == (60, 90)
+        assert result.removed in ([], ["HEAD.PNG"])
+
+    def test_every_reported_path_exists_after_pruning(self, tmp_path: Path) -> None:
+        folder = tmp_path / "images"
+        folder.mkdir(parents=True)
+        Image.new("RGBA", (10, 10)).save(folder / "cape.png")
+        Image.new("RGBA", (10, 10)).save(folder / "TORSO.PNG")
+
+        result = write_loose_images(tmp_path, _images())
+
+        assert [Path(path).name for path in result.paths] == ["head.png", "torso.png"]
+        for path in result.paths:
+            assert Path(path).is_file()
+        assert "cape.png" in result.removed
+
     def test_non_png_files_and_subdirectories_survive(self, tmp_path: Path) -> None:
         folder = tmp_path / "images"
         (folder / "sources").mkdir(parents=True)

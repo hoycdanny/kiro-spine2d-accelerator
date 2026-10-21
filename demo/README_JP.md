@@ -21,7 +21,7 @@ uv sync --project python          # ステップ 2、PSD の部分
 npx playwright install chromium   # ステップ 5〜7、ビジュアルの部分
 ```
 
-ウォーム状態で約 5 秒です。終わったらこの 2 つのフォルダを開いてください。これがデモの中心です。
+ウォーム状態で約 5 秒です。終わったらこの 3 つのフォルダを開いてください。これがデモの中心です。
 
 ```
 demo/out/generated/images/  アタッチメントごとの個別 PNG — File -> Import Data はこれを参照します

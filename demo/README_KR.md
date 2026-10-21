@@ -21,7 +21,7 @@ uv sync --project python          # 2단계, PSD 부분
 npx playwright install chromium   # 5~7단계, 비주얼 부분
 ```
 
-워밍업된 머신에서 약 5초입니다. 끝나면 이 두 폴더를 여세요. 데모의 핵심입니다.
+워밍업된 머신에서 약 5초입니다. 끝나면 이 세 폴더를 여세요. 데모의 핵심입니다.
 
 ```
 demo/out/generated/images/  어태치먼트별 개별 PNG — File -> Import Data가 참조하는 대상

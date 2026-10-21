@@ -22,7 +22,7 @@ uv sync --project python          # step 2, the PSD step
 npx playwright install chromium   # steps 5-7, the visual steps
 ```
 
-Takes about 5 seconds on a warm machine. Then open these two folders — they are the demo:
+Takes about 5 seconds on a warm machine. Then open these three folders — they are the demo:
 
 ```
 demo/out/generated/images/  one loose PNG per attachment — what File -> Import Data resolves against

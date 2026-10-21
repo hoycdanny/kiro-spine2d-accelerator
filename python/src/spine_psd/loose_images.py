@@ -42,6 +42,15 @@ class LooseImages:
     removed: list[str] = field(default_factory=list)
 
 
+def _is_same_file(left: Path, right: Path) -> bool:
+    """Whether two entries are one file, as `HEAD.PNG` and `head.png` are on a
+    case-insensitive filesystem."""
+    try:
+        return left.samefile(right)
+    except OSError:
+        return False
+
+
 def write_loose_images(
     out_dir: str | Path,
     images: dict[str, Any],
@@ -69,6 +78,7 @@ def write_loose_images(
 
     paths: list[str] = []
     written: set[str] = set()
+    written_paths: list[Path] = []
     for name in sorted(images):
         image = images[name]
         if image is None:
@@ -77,6 +87,7 @@ def write_loose_images(
         rgba = image.convert("RGBA") if image.mode != "RGBA" else image
         rgba.save(target / file_name)
         written.add(file_name)
+        written_paths.append(target / file_name)
         paths.append(str(target / file_name))
 
     removed: list[str] = []
@@ -86,6 +97,12 @@ def write_loose_images(
         if existing.suffix.lower() != ".png":
             continue
         if existing.name in written:
+            continue
+        if any(_is_same_file(existing, path) for path in written_paths):
+            # A case-insensitive filesystem kept an older entry name for a
+            # file we just overwrote (`HEAD.PNG` for `head.png`). Unlinking it
+            # would delete the attachment image written moments ago, which is
+            # the blank-canvas bug this module exists to fix.
             continue
         existing.unlink()
         removed.append(existing.name)
