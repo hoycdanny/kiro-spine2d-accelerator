@@ -196,6 +196,9 @@ function synthesiseRig() {
   writeFileSync(join(dir, 'hero.png'), encodePng(page));
 
   note('Built a small rig directly, without the PSD step.');
+  note(
+    'This fallback writes no generated/images/ folder, so it is enough for the render and regression steps (they read the atlas) but not for File -> Import Data in the Spine editor, which resolves loose per-attachment PNGs next to the JSON. Install uv for the real PSD step to get them.',
+  );
   return { skeleton: 'generated/hero.json', atlas: 'generated/hero.atlas' };
 }
 
@@ -287,7 +290,7 @@ async function main() {
   // ------------------------------------------------------------------
   heading(
     'Artwork in, rig out',
-    'A layered PSD becomes a skeleton, an atlas and a page image without opening the Spine editor — which is why this part works on a trial license.',
+    'A layered PSD becomes a skeleton, an atlas, a page image and a generated/images/ folder of loose per-attachment PNGs — all without opening the Spine editor, which is why this part works on a trial license. That images/ folder is what makes File -> Import Data work: the editor resolves each attachment as <skeleton.images>/<attachmentName>.png next to the JSON and never reads the .atlas.',
   );
 
   let assets = null;
@@ -436,6 +439,12 @@ async function main() {
   console.log(bold(rule));
   console.log(`   ${join(WORKSPACE, 'generated')}`);
   console.log(dim('     skeleton JSON, atlas, packed page image'));
+  console.log(`   ${join(WORKSPACE, 'generated', 'images')}`);
+  console.log(
+    dim(
+      '     one loose PNG per attachment — this is what makes File -> Import Data work in the Spine editor',
+    ),
+  );
   if (visuals) {
     console.log(`   ${join(WORKSPACE, 'preview')}`);
     console.log(dim('     four rendered frames of the wave animation'));

@@ -233,6 +233,26 @@ describe('honesty about verification status', () => {
   });
 });
 
+describe('the editor import path is documented', () => {
+  // psd_to_skeleton writes an images/ folder of loose per-attachment PNGs
+  // because the Spine editor's File -> Import Data resolves attachments
+  // against it and never reads the .atlas. A doc that omits this leaves the
+  // reader debugging a blank canvas, so both files must state it.
+  const PSD_TO_RIG = read('steering', 'psd-to-rig.md');
+
+  it('POWER.md names the images folder and the editor import', () => {
+    expect(POWER).toContain('images/');
+    expect(POWER).toContain('Import Data');
+    expect(POWER).toContain('emitLooseImages');
+  });
+
+  it('the psd-to-rig steering file names the images folder and the editor import', () => {
+    expect(PSD_TO_RIG).toContain('images/');
+    expect(PSD_TO_RIG).toContain('Import Data');
+    expect(PSD_TO_RIG).toContain('emitLooseImages');
+  });
+});
+
 describe('the demo is wired up', () => {
   const PACKAGE = JSON.parse(read('package.json')) as {
     scripts: Record<string, string>;
@@ -266,6 +286,23 @@ describe('the demo is wired up', () => {
       expect(content).toContain('make-sample-psd.py');
       expect(content).toContain('demo/out/regression-diff');
     }
+  });
+
+  it('names the loose images folder in every README language', () => {
+    // The images/ folder is what makes File -> Import Data resolve
+    // attachments; a translation that drops it sends an artist to a blank
+    // canvas. The literal is language-neutral, so it stays assertable.
+    for (const file of ['README.md', 'README_ZH.md', 'README_CN.md', 'README_JP.md', 'README_KR.md']) {
+      const content = read('demo', file);
+      expect(content).toContain('images/');
+      expect(content).toContain('generated/images/');
+      expect(content).toContain('Import Data');
+    }
+  });
+
+  it('narrates the loose images folder in the demo script', () => {
+    expect(DEMO).toContain('images');
+    expect(DEMO).toContain('Import Data');
   });
 
   it('is linked from the top-level READMEs', () => {

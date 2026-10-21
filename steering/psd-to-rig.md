@@ -20,9 +20,32 @@ finished one.
 | `<name>.json` | Spine 4.2 skeleton: bones, slots in PSD draw order, a default skin of region attachments, an empty `setup` animation |
 | `<name>.atlas` | 4.0+ format atlas text, one page |
 | `<name>.png` | The packed page image |
+| `images/<attachment>.png` | One loose, unpacked PNG per attachment, named exactly after the attachment. This folder is what the Spine editor's `File -> Import Data` resolves attachments against |
 
-It also reports `boneCount`, `attachmentCount`, `regionNames`, `virtualBones`, `unmappedLayers` and
-`warnings`, then inspects and lints the result before returning.
+It also reports `boneCount`, `attachmentCount`, `regionNames`, `virtualBones`, `unmappedLayers`,
+`imagesDir`, `imagePaths`, `staleImagesRemoved` and `warnings`, then inspects and lints the result
+before returning.
+
+### Editor import reads the loose images, the runtime reads the atlas
+
+The skeleton JSON carries `skeleton.images = "./images/"`, and the editor resolves every attachment
+as `<skeleton.images>/<attachmentName>.png` relative to the imported JSON. **The editor never reads
+the `.atlas` on import.** The spine-ts runtime (and therefore `render_preview`) does the opposite:
+it loads the atlas page and ignores the loose files entirely.
+
+That split is why the "blank canvas after import" bug went unnoticed for so long — every automated
+check ran through the atlas path, which was correct the whole time. If an artist reports an empty
+canvas after `File -> Import Data`, the question is whether `images/` sits next to the JSON, not
+whether the atlas is valid.
+
+- `emitLooseImages` defaults to **true**. Set it to false only when nobody will open the editor
+  (a runtime-only pipeline); the tool then warns that editor import will not resolve attachments.
+- **Stale PNGs are pruned.** After writing, any other `*.png` sitting directly in that folder is
+  deleted and reported in `staleImagesRemoved` — the editor matches by filename, so a leftover
+  `cape.png` from a previous run would be silently picked up. Non-PNG files, subdirectories and
+  PNGs nested inside them are left alone.
+- The loose files are the per-part layer images as they came out of the PSD, not crops of the
+  packed page, so their pixels match the attachment geometry exactly.
 
 ## Layer naming
 

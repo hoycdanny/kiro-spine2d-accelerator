@@ -24,6 +24,7 @@ npx playwright install chromium   # 5~7단계, 비주얼 부분
 워밍업된 머신에서 약 5초입니다. 끝나면 이 두 폴더를 여세요. 데모의 핵심입니다.
 
 ```
+demo/out/generated/images/  어태치먼트별 개별 PNG — File -> Import Data가 참조하는 대상
 demo/out/preview/           애니메이션 렌더링 4프레임
 demo/out/regression-diff/   atlas 3픽셀 이동을 잡아낸 diff 이미지
 ```
@@ -33,7 +34,7 @@ demo/out/regression-diff/   atlas 3픽셀 이동을 잡아낸 diff 이미지
 | 단계 | 화면에 나오는 것 | 그대로 말할 수 있는 한 문장 |
 |---|---|---|
 | 1. 환경 점검 | trial 감지, 7개 작업 차단, Python 사이드카 준비됨 | "시간을 낭비하기 전에, 못 하는 일을 먼저 알려 줍니다." |
-| 2. PSD → 리그 | 본 12개, 어태치먼트 6개, 가상 본 6개, `cape` 건너뜀 | "아트를 넣으면 리그가 나옵니다. 그리고 Spine 에디터를 한 번도 열지 않았습니다. 그래서 이 부분은 trial에서도 동작합니다." |
+| 2. PSD → 리그 | 본 12개, 어태치먼트 6개, 가상 본 6개, `cape` 건너뜀, 그리고 개별 PNG 6장이 담긴 `generated/images/` 폴더 | "아트를 넣으면 리그가 나옵니다. 그리고 Spine 에디터를 한 번도 열지 않았습니다. 그래서 이 부분은 trial에서도 동작합니다. JSON 옆의 `images/` 폴더가 바로 `File -> Import Data`를 성립시키는 것입니다. 에디터는 atlas가 아니라 이 개별 이미지로 어태치먼트를 해석합니다." |
 | 3. 검사 + 린트 | atlas 교차 검사 통과, 수정 방법이 붙은 경고 2건 | "가치 있는 건 교차 검사입니다. 스켈레톤이 필요한데 atlas에 없는 영역은 런타임에서 '아무것도' 그려지지 않고, 어디에도 오류가 나지 않습니다." |
 | 4. 애니메이터가 동작 추가 | `+ animations: idle, wave` | "내보낸 JSON의 텍스트 diff는 읽을 수 없습니다. 이건 리뷰어가 실제로 묻고 싶은 질문에 답합니다." |
 | 5. 렌더링 | 240×240 4프레임, 픽셀 커버리지 보고 | "실제 Spine 웹 런타임으로 헤드리스 렌더링합니다. 커버리지가 있으니 '조용히 아무것도 안 그려졌다'를 감지할 수 있습니다." |
@@ -81,5 +82,6 @@ wave 애니메이션 프레임 4장을 렌더링해서 저장해 주세요.
 | `dist/server.js is missing` | `npm run build` |
 | 2단계에서 uv를 쓸 수 없다고 나옴 | `uv sync --project python`, 또는 내장된 작은 리그로 계속 진행 |
 | 5~7단계가 건너뛰어짐 | `npx playwright install chromium` |
+| Spine 에디터에서 `File -> Import Data` 후 캔버스가 빈 화면 | 에디터는 가져온 JSON을 기준으로 각 어태치먼트를 `<skeleton.images>/<attachmentName>.png`로 해석하며 `.atlas`는 전혀 읽지 않습니다. `demo/out/generated/images/`가 `hero.json` 옆에 있고 어태치먼트마다 PNG가 있는지 확인하세요. 폴더가 없으면 `emitLooseImages` true(기본값)로 다시 실행합니다 |
 | 어느 단계에서 `CLI_TIMEOUT` | 열려 있는 Spine 에디터 창을 모두 닫으세요. 런처가 실행 중인 에디터에 CLI 요청을 넘기고 돌아오지 않습니다 |
 | 텍스트 기록이 필요함 | `NO_COLOR=1 npm run demo > demo-transcript.txt` |

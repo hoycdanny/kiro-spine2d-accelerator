@@ -25,6 +25,7 @@ npx playwright install chromium   # steps 5-7, the visual steps
 Takes about 5 seconds on a warm machine. Then open these two folders — they are the demo:
 
 ```
+demo/out/generated/images/  one loose PNG per attachment — what File -> Import Data resolves against
 demo/out/preview/           four rendered frames of the animation
 demo/out/regression-diff/   the diff image that caught a 3-pixel atlas shift
 ```
@@ -34,7 +35,7 @@ demo/out/regression-diff/   the diff image that caught a 3-pixel atlas shift
 | Step | On screen | The line that lands |
 |---|---|---|
 | 1. Environment | Trial detected, seven operations blocked, Python sidecar ready | "It tells you what it cannot do *before* you waste time on it." |
-| 2. PSD → rig | 12 bones, 6 attachments, 6 virtual bones, `cape` skipped | "Artwork in, rig out — and it never opened the Spine editor, which is why this part works on a trial." |
+| 2. PSD → rig | 12 bones, 6 attachments, 6 virtual bones, `cape` skipped, plus a `generated/images/` folder of 6 loose PNGs | "Artwork in, rig out — and it never opened the Spine editor, which is why this part works on a trial. The `images/` folder next to the JSON is what makes `File -> Import Data` work; the editor resolves attachments against those files, not the atlas." |
 | 3. Inspect + lint | Atlas cross-check passes; two warnings with fixes | "The cross-check is the valuable one: a region the skeleton needs but the atlas lacks renders as *nothing*, with no error anywhere." |
 | 4. Animator adds movement | `+ animations: idle, wave` | "A text diff of exported JSON is unreadable. This answers the question a reviewer actually has." |
 | 5. Render | 4 frames at 240×240, pixel coverage reported | "Rendered with the real Spine web runtime, headless. Coverage means 'it silently rendered nothing' is detectable." |
@@ -84,5 +85,6 @@ Say these out loud rather than waiting to be asked:
 | `dist/server.js is missing` | `npm run build` |
 | Step 2 says uv is unavailable | `uv sync --project python`, or let it synthesise a small rig instead |
 | Steps 5-7 are skipped | `npx playwright install chromium` |
+| The Spine editor shows a blank canvas after `File -> Import Data` | The editor resolves each attachment as `<skeleton.images>/<attachmentName>.png` relative to the imported JSON and never reads the `.atlas`. Check that `demo/out/generated/images/` sits next to `hero.json` with one PNG per attachment; re-run with `emitLooseImages` true (the default) if it is missing |
 | A step reports `CLI_TIMEOUT` | Close any open Spine editor window; the launcher hands CLI requests to a running editor and never returns |
 | You want the transcript as plain text | `NO_COLOR=1 npm run demo > demo-transcript.txt` |

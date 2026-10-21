@@ -191,7 +191,7 @@ and read the matching steering file before acting. Delete or rename the file to 
 
 | Tool | Purpose |
 |------|---------|
-| `psd_to_skeleton` | Layered PSD to skeleton JSON + atlas + page image, then inspect and lint the result. Runs through the Python sidecar. Works on a trial license; `spine_import` afterwards does not |
+| `psd_to_skeleton` | Layered PSD to skeleton JSON + atlas + page image, plus an `images/` folder of loose per-attachment PNGs next to the JSON, then inspect and lint the result. Runs through the Python sidecar. Works on a trial license; `spine_import` afterwards does not |
 
 ### Group D — verification
 
@@ -257,8 +257,15 @@ files entirely. Pass a settings file, or pack separately with `spine_pack`.
 3. Read back `virtualBones` (bones created because no layer provided them) and `unmappedLayers`
    (layers whose names matched no body part) and relay both — those are the two things the artist
    can act on.
-4. `spine_import` to turn the data into a `.spine` project (needs a license).
-5. Tell the developer what the generator does *not* do: no meshes, no weights, no animation beyond
+4. Check `imagesDir` and `imagePaths` before telling anyone to open the editor. The editor's
+   `File -> Import Data` resolves every attachment as `<skeleton.images>/<attachmentName>.png`
+   relative to the imported JSON — it does **not** read the `.atlas` at all, so without that
+   `images/` folder the import succeeds and the canvas looks empty. `emitLooseImages` defaults to
+   true, so the folder is written unless it was explicitly turned off; stale PNGs from an earlier
+   run in that folder are pruned and reported in `staleImagesRemoved`. The runtime and
+   `render_preview` are the other half of the split: they read the atlas and ignore these files.
+5. `spine_import` to turn the data into a `.spine` project (needs a license).
+6. Tell the developer what the generator does *not* do: no meshes, no weights, no animation beyond
    an empty setup animation. Those belong in the editor.
 
 ### Workflow 4: Visual regression

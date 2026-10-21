@@ -23,6 +23,7 @@ npx playwright install chromium   # 第 5–7 步，視覺那段
 熱機狀態約 5 秒跑完。然後打開這兩個資料夾 —— 它們就是 demo 的重點：
 
 ```
+demo/out/generated/images/  每個 attachment 一張散圖 PNG —— File -> Import Data 就是對著它們解析
 demo/out/preview/           動畫的四張渲染畫格
 demo/out/regression-diff/   抓到 atlas 位移 3 像素的 diff 圖
 ```
@@ -32,7 +33,7 @@ demo/out/regression-diff/   抓到 atlas 位移 3 像素的 diff 圖
 | 步驟 | 畫面上出現什麼 | 可以直接講的那句話 |
 |---|---|---|
 | 1. 環境探測 | 偵測到 trial、7 項操作被封鎖、Python sidecar 就緒 | 「它會在你浪費時間之前，先告訴你哪些事做不到。」 |
-| 2. PSD → 骨架 | 12 根骨骼、6 個 attachment、6 根虛擬骨骼、`cape` 被跳過 | 「素材進、骨架出 —— 而且全程沒開 Spine 編輯器，這就是這段在 trial 上也能用的原因。」 |
+| 2. PSD → 骨架 | 12 根骨骼、6 個 attachment、6 根虛擬骨骼、`cape` 被跳過，另外產出含 6 張散圖 PNG 的 `generated/images/` 資料夾 | 「素材進、骨架出 —— 而且全程沒開 Spine 編輯器，這就是這段在 trial 上也能用的原因。JSON 旁邊那個 `images/` 資料夾才是讓 `File -> Import Data` 能成功的關鍵：編輯器是對著這些散圖解析 attachment，不是讀 atlas。」 |
 | 3. 檢視 + 稽核 | atlas 交叉檢查通過、兩個附修正建議的警告 | 「交叉檢查才是關鍵：骨架需要但 atlas 沒有的區域，在 runtime 會畫出『空的』，而且任何地方都不會報錯。」 |
 | 4. 動畫師加動作 | `+ animations: idle, wave` | 「匯出 JSON 的文字 diff 根本看不懂。這個回答的是審查者真正想問的問題。」 |
 | 5. 渲染 | 240×240 四張畫格、回報像素覆蓋率 | 「用真正的 Spine web runtime、無頭渲染。覆蓋率的意義是：『它靜悄悄什麼都沒畫』這件事能被偵測到。」 |
@@ -79,5 +80,6 @@ Power 裝進 Kiro 後，用這些自然語言指令可以走出同一條路徑�
 | `dist/server.js is missing` | 執行 `npm run build` |
 | 第 2 步說 uv 不可用 | 執行 `uv sync --project python`，或讓它改用內建的小骨架 |
 | 第 5–7 步被跳過 | 執行 `npx playwright install chromium` |
+| 在 Spine 編輯器 `File -> Import Data` 之後畫面一片空白 | 編輯器是以匯入的 JSON 為基準，把每個 attachment 解析成 `<skeleton.images>/<attachmentName>.png`，完全不讀 `.atlas`。請確認 `demo/out/generated/images/` 就在 `hero.json` 旁邊、且每個 attachment 都有一張 PNG；若資料夾不存在，用 `emitLooseImages` true（預設值）重跑一次 |
 | 某一步回報 `CLI_TIMEOUT` | 關掉所有 Spine 編輯器視窗；launcher 會把 CLI 請求交給已開啟的編輯器，然後永遠不返回 |
 | 想要純文字逐字稿 | `NO_COLOR=1 npm run demo > demo-transcript.txt` |

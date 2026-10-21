@@ -24,6 +24,7 @@ npx playwright install chromium   # ステップ 5〜7、ビジュアルの部�
 ウォーム状態で約 5 秒です。終わったらこの 2 つのフォルダを開いてください。これがデモの中心です。
 
 ```
+demo/out/generated/images/  アタッチメントごとの個別 PNG — File -> Import Data はこれを参照します
 demo/out/preview/           アニメーションのレンダリング 4 フレーム
 demo/out/regression-diff/   atlas の 3 ピクセルずれを捕まえた差分画像
 ```
@@ -33,7 +34,7 @@ demo/out/regression-diff/   atlas の 3 ピクセルずれを捕まえた差分�
 | ステップ | 画面に出るもの | そのまま言える一言 |
 |---|---|---|
 | 1. 環境確認 | trial を検出、7 つの操作がブロック、Python サイドカー準備完了 | 「時間を無駄にする前に、できないことを先に伝えてくれます。」 |
-| 2. PSD → リグ | ボーン 12、アタッチメント 6、仮想ボーン 6、`cape` はスキップ | 「素材を入れてリグが出る。しかも Spine エディタを一度も開いていません。だからこの部分は trial でも動きます。」 |
+| 2. PSD → リグ | ボーン 12、アタッチメント 6、仮想ボーン 6、`cape` はスキップ、さらに個別 PNG 6 枚を入れた `generated/images/` フォルダ | 「素材を入れてリグが出る。しかも Spine エディタを一度も開いていません。だからこの部分は trial でも動きます。JSON の隣にある `images/` フォルダが `File -> Import Data` を成立させている本体です。エディタは atlas ではなくこの個別画像に対してアタッチメントを解決します。」 |
 | 3. 検査 + lint | atlas の相互チェック通過、修正方法付きの警告 2 件 | 「価値があるのは相互チェックです。スケルトンが必要としているのに atlas に無い領域は、ランタイムで『何も』描かれず、どこにもエラーが出ません。」 |
 | 4. アニメーターが動きを追加 | `+ animations: idle, wave` | 「エクスポート JSON のテキスト差分は読めません。これはレビュアーが本当に聞きたいことに答えます。」 |
 | 5. レンダリング | 240×240 で 4 フレーム、ピクセル被覆率を報告 | 「本物の Spine web ランタイムでヘッドレスに描画します。被覆率があるので『静かに何も描かれなかった』を検出できます。」 |
@@ -81,5 +82,6 @@ wave アニメーションのフレームを 4 枚レンダリングして保存
 | `dist/server.js is missing` | `npm run build` |
 | ステップ 2 で uv が使えないと出る | `uv sync --project python`、またはそのまま内蔵の小さなリグで続行 |
 | ステップ 5〜7 がスキップされる | `npx playwright install chromium` |
+| Spine エディタで `File -> Import Data` した後、キャンバスが真っ白 | エディタは読み込んだ JSON を基準に各アタッチメントを `<skeleton.images>/<attachmentName>.png` として解決し、`.atlas` は一切読みません。`demo/out/generated/images/` が `hero.json` の隣にあり、アタッチメントごとに PNG が揃っているか確認してください。フォルダが無ければ `emitLooseImages` true（既定値）で再実行します |
 | どこかで `CLI_TIMEOUT` が出る | Spine エディタのウィンドウをすべて閉じる。ランチャーは開いているエディタに CLI 要求を渡し、戻ってこなくなります |
 | テキストの記録が欲しい | `NO_COLOR=1 npm run demo > demo-transcript.txt` |
