@@ -9,6 +9,7 @@ const PSD = 'C:\\work\\project\\art\\hero.psd';
 const OUT = 'C:\\work\\project\\generated';
 const SKELETON = `${OUT}\\hero.json`;
 const ATLAS = `${OUT}\\hero.atlas`;
+const IMAGES_DIR = `${OUT}\\images`;
 
 /**
  * Skeleton data shaped like what the Python generator writes: underscore
@@ -74,6 +75,9 @@ const SIDECAR_DATA = {
   virtualBones: ['root', 'hip', 'chest', 'neck'],
   unmappedLayers: ['mysterious cape'],
   warnings: ['No layer provided bone "neck"; it was created as a positioned virtual bone.'],
+  imagesDir: IMAGES_DIR,
+  imagePaths: [`${IMAGES_DIR}\\head.png`, `${IMAGES_DIR}\\torso.png`],
+  staleImagesRemoved: [],
 };
 
 function sidecar(
@@ -165,6 +169,66 @@ describe('psdToSkeleton', () => {
     if (!result.ok) return;
     expect(result.summary).toContain('Virtual bones created');
     expect(result.summary).toContain('mysterious cape');
+  });
+
+  it('reports the loose images folder and the PNG count', async () => {
+    const host = generateHost();
+    const result = await psdToSkeleton(host, sidecar({ ok: true, data: SIDECAR_DATA }), {
+      psd: 'art/hero.psd',
+      outDir: 'generated',
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.summary).toContain(`Images: ${IMAGES_DIR} — 2 loose PNG(s)`);
+    expect(result.summary).toContain('File -> Import Data');
+    // The full list travels in structuredContent, not in the summary text.
+    expect(result.data.generated.imagePaths).toEqual([
+      `${IMAGES_DIR}\\head.png`,
+      `${IMAGES_DIR}\\torso.png`,
+    ]);
+    expect(result.summary).not.toContain('head.png');
+  });
+
+  it('forwards emitLooseImages when the caller turns it off', async () => {
+    const host = generateHost();
+    const capture: { request?: Record<string, unknown> } = {};
+    await psdToSkeleton(host, sidecar({ ok: true, data: SIDECAR_DATA }, capture), {
+      psd: 'art/hero.psd',
+      outDir: 'generated',
+      emitLooseImages: false,
+    });
+    expect(capture.request).toMatchObject({ emitLooseImages: false });
+  });
+
+  it('warns that editor import will not resolve when no images were written', async () => {
+    // Either an older sidecar with no image fields at all, or the toggle off.
+    const host = generateHost();
+    const { imagesDir, imagePaths, staleImagesRemoved, ...withoutImages } = SIDECAR_DATA;
+    const result = await psdToSkeleton(host, sidecar({ ok: true, data: withoutImages }), {
+      psd: 'art/hero.psd',
+      outDir: 'generated',
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.summary).toContain('No loose per-attachment images were written');
+    expect(result.summary).toContain('File -> Import Data');
+    expect(result.data.generated.imagePaths).toBeUndefined();
+  });
+
+  it('reports stale images that were pruned', async () => {
+    const host = generateHost();
+    const result = await psdToSkeleton(
+      host,
+      sidecar({
+        ok: true,
+        data: { ...SIDECAR_DATA, staleImagesRemoved: ['cape.png', 'sword.png'] },
+      }),
+      { psd: 'art/hero.psd', outDir: 'generated' },
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.summary).toContain('Stale images pruned');
+    expect(result.summary).toContain('cape.png, sword.png');
   });
 
   it('names the import step as the next action', async () => {

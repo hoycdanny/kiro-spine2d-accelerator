@@ -9,6 +9,14 @@
 // The generated skeleton is linted before it is returned: data that cannot
 // load is worse than no data, and a pass here is what makes the "open it in
 // Spine" step trustworthy.
+//
+// The trap worth knowing: the editor's File -> Import Data resolves every
+// attachment as `<skeleton.images>/<attachmentName>.png` relative to the
+// skeleton JSON and never reads the .atlas. So the sidecar also writes loose
+// per-attachment PNGs into an `images/` folder next to the JSON
+// (`emitLooseImages`, default true). Without that folder the import succeeds
+// and the canvas is blank. The runtime and `render_preview` are the other way
+// round: they read the atlas and ignore the loose files.
 // ============================================================
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -37,6 +45,22 @@ export interface PsdToSkeletonResult {
   /** Layers whose names matched no known body part. */
   unmappedLayers: string[];
   warnings: string[];
+  /**
+   * Folder holding the loose per-attachment PNGs the editor import resolves
+   * against. Omitted by an older sidecar, and empty when `emitLooseImages`
+   * is off.
+   */
+  imagesDir?: string;
+  /**
+   * Full paths of the written `<attachment>.png` files. Omitted by an older
+   * sidecar, empty when `emitLooseImages` is off.
+   */
+  imagePaths?: string[];
+  /**
+   * Names (not paths) of stale PNGs pruned from the images folder. Omitted by
+   * an older sidecar, empty when `emitLooseImages` is off.
+   */
+  staleImagesRemoved?: string[];
 }
 
 /** Payload returned by `psd_to_skeleton`. */
@@ -61,6 +85,7 @@ export async function psdToSkeleton(
     padding?: number | undefined;
     maxSize?: number | undefined;
     premultipliedAlpha?: boolean | undefined;
+    emitLooseImages?: boolean | undefined;
     timeoutSeconds?: number | undefined;
   },
 ): Promise<SpineResult<PsdToSkeletonData>> {
@@ -82,6 +107,9 @@ export async function psdToSkeleton(
       ...(args.premultipliedAlpha === undefined
         ? {}
         : { premultipliedAlpha: args.premultipliedAlpha }),
+      ...(args.emitLooseImages === undefined
+        ? {}
+        : { emitLooseImages: args.emitLooseImages }),
     },
     args.timeoutSeconds === undefined ? undefined : args.timeoutSeconds * 1000,
   );
@@ -119,6 +147,27 @@ export async function psdToSkeleton(
     `Skeleton: ${generated.data.skeletonPath}`,
     `Atlas: ${generated.data.atlasPath} (${generated.data.pagePaths.join(', ')})`,
   ];
+
+  // Paths and counts only — the full file list stays in structuredContent.
+  const imagesDir = generated.data.imagesDir ?? '';
+  const imagePaths = generated.data.imagePaths ?? [];
+  const staleImagesRemoved = generated.data.staleImagesRemoved ?? [];
+
+  if (imagesDir === '') {
+    summaryLines.push(
+      "No loose per-attachment images were written, so the Spine editor's File -> Import Data will not resolve attachments and the canvas will look empty. Re-run with emitLooseImages true (the default) to get them; the atlas path (runtime and render_preview) is unaffected.",
+    );
+  } else {
+    summaryLines.push(
+      `Images: ${imagesDir} — ${imagePaths.length} loose PNG(s) named after the attachments, which is what the Spine editor's File -> Import Data resolves against.`,
+    );
+  }
+
+  if (staleImagesRemoved.length > 0) {
+    summaryLines.push(
+      `Stale images pruned from that folder: ${staleImagesRemoved.join(', ')}. The editor resolves attachment names against the folder, so leftovers from an earlier run are removed rather than silently picked up.`,
+    );
+  }
 
   if (generated.data.virtualBones.length > 0) {
     summaryLines.push(
@@ -163,6 +212,7 @@ export function registerGenerateTools(
         'Layer names drive the rig: head, torso/body, chest, neck, hip/pelvis, arm_left, forearm_right, hand_left, thigh_right, shin_left, foot_right and the usual side spellings.',
         'Missing intermediate bones are created as positioned virtual bones, and each part pivots at its joint edge rather than its image centre, so limbs rotate from the joint.',
         'A layer named "<part>[pivot]" places that bone origin explicitly. Unrecognised layers are reported rather than guessed at.',
+        "Loose per-attachment PNGs are also written into an images/ folder next to the skeleton JSON, because the editor's File -> Import Data resolves <skeleton.images>/<attachmentName>.png relative to the JSON and never reads the .atlas; without them the import succeeds and the canvas is blank. The runtime and render_preview read the atlas instead. Set emitLooseImages false to skip them.",
         'This bypasses the Spine editor, so it works on a trial license. Importing the result into a .spine project with spine_import does need a license.',
         'Requires the Python sidecar: uv sync --project python.',
       ].join(' '),
@@ -194,6 +244,12 @@ export function registerGenerateTools(
           .optional()
           .describe(
             'Record premultiplied alpha in the atlas. Defaults to false; the page image is not premultiplied, so only set this if the runtime expects it.',
+          ),
+        emitLooseImages: z
+          .boolean()
+          .optional()
+          .describe(
+            "Write loose per-attachment PNGs into an images/ folder next to the skeleton JSON. Defaults to true. That folder is what the Spine editor's File -> Import Data resolves attachments against (<skeleton.images>/<attachmentName>.png, relative to the JSON); the atlas is not read on import, while the runtime and render_preview read the atlas and ignore these files. Stale PNGs left in the folder by an earlier run are pruned.",
           ),
         timeoutSeconds: z
           .number()
