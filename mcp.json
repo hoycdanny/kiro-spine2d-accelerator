@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "spine-mcp": {
+      "command": "node",
+      "args": ["./dist/server.js"],
+      "transport": "stdio",
+      "env": {
+        "SPINE_EXECUTABLE": "",
+        "SPINE_USER_DATA": ""
+      },
+      "disabled": false
+    }
+  }
+}

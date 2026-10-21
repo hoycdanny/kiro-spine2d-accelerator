@@ -1,0 +1,17 @@
+node_modules/
+dist/
+coverage/
+*.log
+
+# Generated artifacts from local runs
+.spine-mcp-out/
+demo/out/
+tests/**/__screenshots__/actual/
+tests/**/__screenshots__/diff/
+
+# Python sidecar
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.uv/
