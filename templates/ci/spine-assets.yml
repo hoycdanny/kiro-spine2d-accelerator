@@ -1,0 +1,118 @@
+# Spine asset pipeline for GitHub Actions.
+#
+# Default shape assumes the exported artifacts are committed, so the runner
+# needs no Spine license: it lints the data and runs visual regression.
+# The export steps are present but commented, because they require an
+# installed and activated Spine editor on the runner ??see the notes at the
+# bottom and steering/ci-pipeline.md.
+
+name: spine-assets
+
+on:
+  pull_request:
+    paths:
+      - 'art/**'
+      - 'export/**'
+      - 'baseline/**'
+      - 'templates/**'
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the execution layer
+        run: npm run build
+
+      # Chromium is only needed for the visual regression step. Caching it
+      # matters: downloading it takes longer than the rest of this job.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # --- Gate 1: data correctness -------------------------------------
+      # Fails on any error-severity finding. Raise to --fail-on=warning once
+      # the team agrees its budgets in templates/lint-rules/budgets.json.
+      - name: Lint skeleton data
+        run: |
+          node dist/ci-cli.js lint \
+            --export-dir export \
+            --rules templates/lint-rules/naming.json \
+            --rules templates/lint-rules/budgets.json \
+            --fail-on error
+
+      # --- Gate 2: visual stability -------------------------------------
+      # Baselines live in baseline/<animation>/ and are bound to the
+      # skeleton hash: when the data changes, this reports that rather than
+      # pixel noise.
+      - name: Visual regression
+        run: |
+          node dist/ci-cli.js regression \
+            --export-dir export \
+            --baseline-dir baseline \
+            --diff-dir regression-diff
+
+      - name: Upload regression diffs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spine-regression-diff
+          path: regression-diff/
+          if-no-files-found: ignore
+
+  # ------------------------------------------------------------------
+  # Re-export on a self-hosted runner with a licensed Spine editor.
+  #
+  # Uncomment only when such a runner exists. A Spine license is per seat
+  # and a runner counts as one, so this is an organisational decision, not
+  # just a configuration change.
+  # ------------------------------------------------------------------
+  #
+  # export:
+  #   runs-on: [self-hosted, spine-licensed]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '20'
+  #         cache: npm
+  #     - run: npm ci && npm run build
+  #
+  #     # --update pins the editor build. Without it the launcher can update
+  #     # itself and the same commit produces different output next month.
+  #     - name: Export every project
+  #       run: |
+  #         node dist/ci-cli.js export \
+  #           --projects-dir art \
+  #           --out-dir export \
+  #           --settings templates/export-settings/ci-batch.export.json \
+  #           --update 4.2.xx
+  #
+  #     # Image and video export need a windowing system and OpenGL, so they
+  #     # are deliberately absent here. Visual checks run through the
+  #     # headless renderer in the verify job instead.
+  #
+  #     # Semantic diff of one artifact against its committed version, which
+  #     # turns "12 frames moved" into "the head bone was reparented".
+  #     - name: Diff against the committed artifact
+  #       run: |
+  #         git show HEAD:export/hero.json > /tmp/hero-before.json
+  #         node dist/ci-cli.js diff --from /tmp/hero-before.json --to export/hero.json
