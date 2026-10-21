@@ -20,11 +20,11 @@ finished one.
 | `<name>.json` | Spine 4.2 skeleton: bones, slots in PSD draw order, a default skin of region attachments, an empty `setup` animation |
 | `<name>.atlas` | 4.0+ format atlas text, one page |
 | `<name>.png` | The packed page image |
-| `images/<attachment>.png` | One loose, unpacked PNG per attachment, named exactly after the attachment. This folder is what the Spine editor's `File -> Import Data` resolves attachments against |
+| `images/<attachment>.png` | One loose, unpacked PNG per attachment, named exactly after the attachment. This folder is what the Spine editor's `File -> Import Data` resolves attachments against. Only files named after a known body part are managed here; anything else in the folder is reported, not deleted |
 
 It also reports `boneCount`, `attachmentCount`, `regionNames`, `virtualBones`, `unmappedLayers`,
-`imagesDir`, `imagePaths`, `staleImagesRemoved` and `warnings`, then inspects and lints the result
-before returning.
+`imagesDir`, `imagePaths`, `staleImagesRemoved`, `foreignImagesKept` and `warnings`, then inspects
+and lints the result before returning.
 
 ### Editor import reads the loose images, the runtime reads the atlas
 
@@ -40,10 +40,15 @@ whether the atlas is valid.
 
 - `emitLooseImages` defaults to **true**. Set it to false only when nobody will open the editor
   (a runtime-only pipeline); the tool then warns that editor import will not resolve attachments.
-- **Stale PNGs are pruned.** After writing, any other `*.png` sitting directly in that folder is
-  deleted and reported in `staleImagesRemoved` — the editor matches by filename, so a leftover
-  `cape.png` from a previous run would be silently picked up. Non-PNG files, subdirectories and
-  PNGs nested inside them are left alone.
+- **The tool prunes only what it owns, and reports the rest.** Attachment names always come from
+  the canonical body-part list, so that list is the whole set of names the tool can write. After
+  writing, a top-level `*.png` whose stem is one of those names but is not part of this rig is a
+  leftover from an earlier run: it is deleted and reported in `staleImagesRemoved`. Any other PNG
+  — an animator's hand-made `cape.png`, or an alias spelling like `body.png` — is reported in
+  `foreignImagesKept` and **never deleted**. That matters because the editor matches by file name,
+  so a file the tool will not remove can still be resolved as an attachment; relay the list rather
+  than assuming the folder is clean. Non-PNG files, subdirectories and PNGs nested inside them are
+  left alone.
 - The loose files are the per-part layer images as they came out of the PSD, not crops of the
   packed page, so their pixels match the attachment geometry exactly.
 

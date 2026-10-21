@@ -82,6 +82,6 @@ wave 애니메이션 프레임 4장을 렌더링해서 저장해 주세요.
 | `dist/server.js is missing` | `npm run build` |
 | 2단계에서 uv를 쓸 수 없다고 나옴 | `uv sync --project python`, 또는 내장된 작은 리그로 계속 진행 |
 | 5~7단계가 건너뛰어짐 | `npx playwright install chromium` |
-| Spine 에디터에서 `File -> Import Data` 후 캔버스가 빈 화면 | 에디터는 가져온 JSON을 기준으로 각 어태치먼트를 `<skeleton.images>/<attachmentName>.png`로 해석하며 `.atlas`는 전혀 읽지 않습니다. `demo/out/generated/images/`가 `hero.json` 옆에 있고 어태치먼트마다 PNG가 있는지 확인하세요. 폴더가 없으면 `emitLooseImages` true(기본값)로 다시 실행합니다 |
+| Spine 에디터에서 `File -> Import Data` 후 캔버스가 빈 화면 | 에디터는 가져온 JSON을 기준으로 각 어태치먼트를 `<skeleton.images>/<attachmentName>.png`로 해석하며 `.atlas`는 전혀 읽지 않습니다. `demo/out/generated/images/`가 `hero.json` 옆에 있고 어태치먼트마다 PNG가 있는지 확인하세요. 폴더가 없으면 `emitLooseImages` true(기본값)로 다시 실행합니다. 직접 그 폴더에 넣은 PNG는 `foreignImagesKept`로 보고되고 그대로 남습니다. 알려진 신체 부위 이름의 이미지만 정리됩니다 |
 | 어느 단계에서 `CLI_TIMEOUT` | 열려 있는 Spine 에디터 창을 모두 닫으세요. 런처가 실행 중인 에디터에 CLI 요청을 넘기고 돌아오지 않습니다 |
 | 텍스트 기록이 필요함 | `NO_COLOR=1 npm run demo > demo-transcript.txt` |

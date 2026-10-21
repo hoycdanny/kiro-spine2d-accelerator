@@ -38,9 +38,11 @@ Responses are `{"ok": true, "data": {...}}` or
 Diagnostics go to stderr so stdout stays parseable.
 
 `emitLooseImages` defaults to true; set it to false to write only the atlas path. The success
-payload reports `imagesDir` (the folder), `imagePaths` (the written `<attachment>.png` files) and
-`staleImagesRemoved` (names of PNGs pruned from that folder, since a leftover from an earlier run
-is exactly what the editor would silently pick up).
+payload reports `imagesDir` (the folder), `imagePaths` (the written `<attachment>.png` files),
+`staleImagesRemoved` (names of its *own* leftovers pruned from that folder — PNGs named after a
+body part this rig no longer has, which the editor would otherwise silently pick up) and
+`foreignImagesKept` (names of any other PNG found there, reported and left exactly where it is,
+because the pipeline never deletes a file it could not have written).
 
 ## Layer naming
 

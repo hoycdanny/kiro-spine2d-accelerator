@@ -191,7 +191,7 @@ and read the matching steering file before acting. Delete or rename the file to 
 
 | Tool | Purpose |
 |------|---------|
-| `psd_to_skeleton` | Layered PSD to skeleton JSON + atlas + page image, plus an `images/` folder of loose per-attachment PNGs next to the JSON, then inspect and lint the result. Runs through the Python sidecar. Works on a trial license; `spine_import` afterwards does not |
+| `psd_to_skeleton` | Layered PSD to skeleton JSON + atlas + page image, plus an `images/` folder of loose per-attachment PNGs next to the JSON, then inspect and lint the result. In that folder it manages only the PNGs it owns — anything else there is reported, never deleted. Runs through the Python sidecar. Works on a trial license; `spine_import` afterwards does not |
 
 ### Group D — verification
 
@@ -261,9 +261,13 @@ files entirely. Pass a settings file, or pack separately with `spine_pack`.
    `File -> Import Data` resolves every attachment as `<skeleton.images>/<attachmentName>.png`
    relative to the imported JSON — it does **not** read the `.atlas` at all, so without that
    `images/` folder the import succeeds and the canvas looks empty. `emitLooseImages` defaults to
-   true, so the folder is written unless it was explicitly turned off; stale PNGs from an earlier
-   run in that folder are pruned and reported in `staleImagesRemoved`. The runtime and
-   `render_preview` are the other half of the split: they read the atlas and ignore these files.
+   true, so the folder is written unless it was explicitly turned off. The tool only manages the
+   PNGs it owns there: its own leftovers from an earlier run — files named after a known body part
+   that this rig no longer has — are pruned and reported in `staleImagesRemoved`, while any other
+   PNG in that folder is reported in `foreignImagesKept` and **left untouched**. Relay that second
+   list: the editor resolves attachments by file name, so a file nobody expected can still be
+   picked up. The runtime and `render_preview` are the other half of the split: they read the atlas
+   and ignore these files.
 5. `spine_import` to turn the data into a `.spine` project (needs a license).
 6. Tell the developer what the generator does *not* do: no meshes, no weights, no animation beyond
    an empty setup animation. Those belong in the editor.

@@ -17,6 +17,12 @@
 // (`emitLooseImages`, default true). Without that folder the import succeeds
 // and the canvas is blank. The runtime and `render_preview` are the other way
 // round: they read the atlas and ignore the loose files.
+//
+// That folder is shared ground, so the generator only manages the PNGs it
+// owns: stems that are canonical bone names, which is the only namespace it
+// can write. Its own leftovers from an earlier run are pruned
+// (`staleImagesRemoved`); any other PNG is somebody's artwork and is reported
+// instead (`foreignImagesKept`), because the editor would resolve it by name.
 // ============================================================
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -57,10 +63,31 @@ export interface PsdToSkeletonResult {
    */
   imagePaths?: string[];
   /**
-   * Names (not paths) of stale PNGs pruned from the images folder. Omitted by
-   * an older sidecar, empty when `emitLooseImages` is off.
+   * Names (not paths) of stale PNGs the generator itself wrote on an earlier
+   * run and pruned from the images folder. Omitted by an older sidecar, empty
+   * when `emitLooseImages` is off.
    */
   staleImagesRemoved?: string[];
+  /**
+   * Names (not paths) of PNGs found in the images folder that the generator
+   * does not own and therefore left in place. Omitted by an older sidecar,
+   * empty when `emitLooseImages` is off.
+   */
+  foreignImagesKept?: string[];
+}
+
+/**
+ * How many file names a summary line spells out. The full lists travel in
+ * structuredContent, so the summary stays well inside the inline budget in
+ * tool-result.ts no matter how many files a folder holds.
+ */
+const MAX_NAMED_IMAGES = 5;
+
+/** A few names inline, the remainder as a count. */
+function nameList(names: string[]): string {
+  const shown = names.slice(0, MAX_NAMED_IMAGES).join(', ');
+  const extra = names.length - MAX_NAMED_IMAGES;
+  return extra > 0 ? `${shown} and ${extra} more` : shown;
 }
 
 /** Payload returned by `psd_to_skeleton`. */
@@ -152,6 +179,7 @@ export async function psdToSkeleton(
   const imagesDir = generated.data.imagesDir ?? '';
   const imagePaths = generated.data.imagePaths ?? [];
   const staleImagesRemoved = generated.data.staleImagesRemoved ?? [];
+  const foreignImagesKept = generated.data.foreignImagesKept ?? [];
 
   if (imagesDir === '') {
     summaryLines.push(
@@ -165,7 +193,13 @@ export async function psdToSkeleton(
 
   if (staleImagesRemoved.length > 0) {
     summaryLines.push(
-      `Stale images pruned from that folder: ${staleImagesRemoved.join(', ')}. The editor resolves attachment names against the folder, so leftovers from an earlier run are removed rather than silently picked up.`,
+      `Stale images pruned from that folder: ${nameList(staleImagesRemoved)}. These were written by an earlier run of this tool and the current rig no longer has those attachments; the editor resolves attachment names against the folder, so they would otherwise be silently picked up.`,
+    );
+  }
+
+  if (foreignImagesKept.length > 0) {
+    summaryLines.push(
+      `PNGs this tool does not own, left in place: ${nameList(foreignImagesKept)}. Only images named after a known body part are pruned, so these were not touched — but the Spine editor resolves attachments by file name against this folder, so check whether they belong to this skeleton and delete them yourself if they do not.`,
     );
   }
 
@@ -212,7 +246,7 @@ export function registerGenerateTools(
         'Layer names drive the rig: head, torso/body, chest, neck, hip/pelvis, arm_left, forearm_right, hand_left, thigh_right, shin_left, foot_right and the usual side spellings.',
         'Missing intermediate bones are created as positioned virtual bones, and each part pivots at its joint edge rather than its image centre, so limbs rotate from the joint.',
         'A layer named "<part>[pivot]" places that bone origin explicitly. Unrecognised layers are reported rather than guessed at.',
-        "Loose per-attachment PNGs are also written into an images/ folder next to the skeleton JSON, because the editor's File -> Import Data resolves <skeleton.images>/<attachmentName>.png relative to the JSON and never reads the .atlas; without them the import succeeds and the canvas is blank. The runtime and render_preview read the atlas instead. Set emitLooseImages false to skip them.",
+        "Loose per-attachment PNGs are also written into an images/ folder next to the skeleton JSON, because the editor's File -> Import Data resolves <skeleton.images>/<attachmentName>.png relative to the JSON and never reads the .atlas; without them the import succeeds and the canvas is blank. The runtime and render_preview read the atlas instead. Only PNGs named after a known body part are managed in that folder; any other PNG found there is reported, not deleted. Set emitLooseImages false to skip them.",
         'This bypasses the Spine editor, so it works on a trial license. Importing the result into a .spine project with spine_import does need a license.',
         'Requires the Python sidecar: uv sync --project python.',
       ].join(' '),
@@ -249,7 +283,7 @@ export function registerGenerateTools(
           .boolean()
           .optional()
           .describe(
-            "Write loose per-attachment PNGs into an images/ folder next to the skeleton JSON. Defaults to true. That folder is what the Spine editor's File -> Import Data resolves attachments against (<skeleton.images>/<attachmentName>.png, relative to the JSON); the atlas is not read on import, while the runtime and render_preview read the atlas and ignore these files. Stale PNGs left in the folder by an earlier run are pruned.",
+            "Write loose per-attachment PNGs into an images/ folder next to the skeleton JSON. Defaults to true. That folder is what the Spine editor's File -> Import Data resolves attachments against (<skeleton.images>/<attachmentName>.png, relative to the JSON); the atlas is not read on import, while the runtime and render_preview read the atlas and ignore these files. Only PNGs this tool owns are managed: its own leftovers from an earlier run are pruned, and any other PNG in that folder is reported in foreignImagesKept and left untouched.",
           ),
         timeoutSeconds: z
           .number()

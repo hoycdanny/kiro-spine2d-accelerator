@@ -15,8 +15,8 @@
 // the last JSON line out), so protocol growth happens at the two ends. For
 // `psd_to_skeleton` the request accepts the optional boolean
 // `emitLooseImages` (default true) and the response carries `imagesDir`,
-// `imagePaths` and `staleImagesRemoved` alongside the skeleton and atlas
-// paths. Those additions are why PROTOCOL_VERSION is still 1: an older
+// `imagePaths`, `staleImagesRemoved` and `foreignImagesKept` alongside the
+// skeleton and atlas paths. Those additions are why PROTOCOL_VERSION is still 1: an older
 // sidecar simply omits the image fields, which the caller treats as optional.
 // ============================================================
 

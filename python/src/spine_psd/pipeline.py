@@ -36,7 +36,12 @@ class PipelineResult:
     #: Empty when emit_loose_images is off.
     images_dir: str = ""
     image_paths: list[str] = field(default_factory=list)
+    #: Names of own-namespace PNGs (canonical bone stems) pruned from the
+    #: folder because the current rig no longer has that attachment.
     stale_images_removed: list[str] = field(default_factory=list)
+    #: Names of PNGs found in that folder that the tool does not own and left
+    #: in place. Reported so a file the editor might resolve is never silent.
+    foreign_images_kept: list[str] = field(default_factory=list)
 
 
 def run_pipeline(
@@ -124,11 +129,13 @@ def run_pipeline(
     loose_dir = ""
     loose_paths: list[str] = []
     loose_removed: list[str] = []
+    loose_kept: list[str] = []
     if emit_loose_images:
         loose = write_loose_images(out_dir, images)
         loose_dir = loose.dir
         loose_paths = loose.paths
         loose_removed = loose.removed
+        loose_kept = loose.kept
     else:
         extra_warnings.append(
             "Loose per-attachment images were not written, so the Spine editor's "
@@ -154,4 +161,5 @@ def run_pipeline(
         images_dir=loose_dir,
         image_paths=loose_paths,
         stale_images_removed=loose_removed,
+        foreign_images_kept=loose_kept,
     )

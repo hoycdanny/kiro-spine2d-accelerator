@@ -80,6 +80,6 @@ Power 裝進 Kiro 後，用這些自然語言指令可以走出同一條路徑�
 | `dist/server.js is missing` | 執行 `npm run build` |
 | 第 2 步說 uv 不可用 | 執行 `uv sync --project python`，或讓它改用內建的小骨架 |
 | 第 5–7 步被跳過 | 執行 `npx playwright install chromium` |
-| 在 Spine 編輯器 `File -> Import Data` 之後畫面一片空白 | 編輯器是以匯入的 JSON 為基準，把每個 attachment 解析成 `<skeleton.images>/<attachmentName>.png`，完全不讀 `.atlas`。請確認 `demo/out/generated/images/` 就在 `hero.json` 旁邊、且每個 attachment 都有一張 PNG；若資料夾不存在，用 `emitLooseImages` true（預設值）重跑一次 |
+| 在 Spine 編輯器 `File -> Import Data` 之後畫面一片空白 | 編輯器是以匯入的 JSON 為基準，把每個 attachment 解析成 `<skeleton.images>/<attachmentName>.png`，完全不讀 `.atlas`。請確認 `demo/out/generated/images/` 就在 `hero.json` 旁邊、且每個 attachment 都有一張 PNG；若資料夾不存在，用 `emitLooseImages` true（預設值）重跑一次。你自己放進那個資料夾的 PNG 會列在 `foreignImagesKept` 並原封不動保留：只有以已知身體部位命名的圖才會被清掉 |
 | 某一步回報 `CLI_TIMEOUT` | 關掉所有 Spine 編輯器視窗；launcher 會把 CLI 請求交給已開啟的編輯器，然後永遠不返回 |
 | 想要純文字逐字稿 | `NO_COLOR=1 npm run demo > demo-transcript.txt` |

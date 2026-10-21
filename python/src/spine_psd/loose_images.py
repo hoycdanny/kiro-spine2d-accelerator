@@ -9,6 +9,14 @@ import work; the atlas stays the runtime and preview path.
 The files are the unpacked per-part images, not crops of the packed page: the
 page has padding applied, and each part image is already the exact untrimmed
 region the attachment geometry was derived from.
+
+Ownership rule: this module only ever deletes PNGs it could have written
+itself. Attachment names come from one source — `psd_parser.classify_layer`
+runs every layer through `conventions.canonical_bone`, so `part.bone`, the
+slot, the attachment and the atlas region all carry a `conventions`
+bone name — which makes that closed set the tool's whole namespace. A PNG in
+the folder with any other stem belongs to somebody else: it is reported and
+left in place, never removed.
 """
 
 from __future__ import annotations
@@ -16,6 +24,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+from .conventions import BONE_BY_NAME
+
+#: Every stem this tool can write: the canonical bone names. Layer-name
+#: aliases are not included — an alias is resolved to its canonical bone
+#: before anything is written, so `body.png` is a file the tool never
+#: produced and therefore never deletes.
+OWN_IMAGE_STEMS: frozenset[str] = frozenset(BONE_BY_NAME)
 
 #: The folder name written next to the skeleton JSON. Single source of truth:
 #: `writer.build_skeleton_json` takes its `images_path` default from here, so
@@ -38,8 +54,11 @@ class LooseImages:
     dir: str = ""
     #: Absolute paths of the written `<attachment>.png` files.
     paths: list[str] = field(default_factory=list)
-    #: File names of the stale PNGs pruned from the folder.
+    #: File names of the stale own-namespace PNGs pruned from the folder.
     removed: list[str] = field(default_factory=list)
+    #: File names of the PNGs found in the folder that this tool does not own
+    #: and therefore left untouched.
+    kept: list[str] = field(default_factory=list)
 
 
 def _is_same_file(left: Path, right: Path) -> bool:
@@ -58,11 +77,14 @@ def write_loose_images(
 ) -> LooseImages:
     """Write one `<attachment>.png` per image into `out_dir / dir_name`.
 
-    Matching names are overwritten. Any other `*.png` sitting directly in the
-    folder is deleted and reported, because the editor resolves attachment
-    names against this folder and a leftover from a previous run is exactly
-    what it would silently pick up. Non-PNG files and subdirectories are left
-    alone, and the scan never recurses.
+    Matching names are overwritten. The editor resolves attachment names
+    against this folder, so a leftover from a previous run would be silently
+    picked up: every other top-level `*.png` is therefore accounted for. Those
+    whose stem is a canonical bone name — a file this tool wrote on an earlier
+    run — are deleted and reported in `removed`. Anything else is somebody's
+    own artwork: it is reported in `kept` and left exactly where it is.
+    Non-PNG files and subdirectories are untouched, and the scan never
+    recurses.
     """
     from PIL import Image  # noqa: F401 - lazy, as in atlas_packer.compose_page
 
@@ -91,6 +113,7 @@ def write_loose_images(
         paths.append(str(target / file_name))
 
     removed: list[str] = []
+    kept: list[str] = []
     for existing in sorted(target.iterdir()):
         if not existing.is_file():
             continue
@@ -104,7 +127,12 @@ def write_loose_images(
             # would delete the attachment image written moments ago, which is
             # the blank-canvas bug this module exists to fix.
             continue
+        if existing.stem.lower() not in OWN_IMAGE_STEMS:
+            # Not a name this tool can produce, so it is not ours to delete.
+            # Reporting it is what keeps a stale file from being silent.
+            kept.append(existing.name)
+            continue
         existing.unlink()
         removed.append(existing.name)
 
-    return LooseImages(dir=str(target), paths=paths, removed=removed)
+    return LooseImages(dir=str(target), paths=paths, removed=removed, kept=kept)

@@ -78,6 +78,7 @@ const SIDECAR_DATA = {
   imagesDir: IMAGES_DIR,
   imagePaths: [`${IMAGES_DIR}\\head.png`, `${IMAGES_DIR}\\torso.png`],
   staleImagesRemoved: [],
+  foreignImagesKept: [],
 };
 
 function sidecar(
@@ -203,7 +204,13 @@ describe('psdToSkeleton', () => {
   it('warns that editor import will not resolve when no images were written', async () => {
     // Either an older sidecar with no image fields at all, or the toggle off.
     const host = generateHost();
-    const { imagesDir, imagePaths, staleImagesRemoved, ...withoutImages } = SIDECAR_DATA;
+    const {
+      imagesDir,
+      imagePaths,
+      staleImagesRemoved,
+      foreignImagesKept,
+      ...withoutImages
+    } = SIDECAR_DATA;
     const result = await psdToSkeleton(host, sidecar({ ok: true, data: withoutImages }), {
       psd: 'art/hero.psd',
       outDir: 'generated',
@@ -215,20 +222,64 @@ describe('psdToSkeleton', () => {
     expect(result.data.generated.imagePaths).toBeUndefined();
   });
 
-  it('reports stale images that were pruned', async () => {
+  it('reports its own stale images that were pruned', async () => {
     const host = generateHost();
     const result = await psdToSkeleton(
       host,
       sidecar({
         ok: true,
-        data: { ...SIDECAR_DATA, staleImagesRemoved: ['cape.png', 'sword.png'] },
+        data: {
+          ...SIDECAR_DATA,
+          staleImagesRemoved: ['forearm_left.png', 'shin_right.png'],
+        },
       }),
       { psd: 'art/hero.psd', outDir: 'generated' },
     );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.summary).toContain('Stale images pruned');
+    expect(result.summary).toContain('forearm_left.png, shin_right.png');
+  });
+
+  it('reports the PNGs it does not own instead of deleting them', async () => {
+    const host = generateHost();
+    const result = await psdToSkeleton(
+      host,
+      sidecar({
+        ok: true,
+        data: { ...SIDECAR_DATA, foreignImagesKept: ['cape.png', 'sword.png'] },
+      }),
+      { psd: 'art/hero.psd', outDir: 'generated' },
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.summary).toContain('PNGs this tool does not own, left in place');
     expect(result.summary).toContain('cape.png, sword.png');
+    expect(result.summary).not.toContain('Stale images pruned');
+    expect(result.data.generated.foreignImagesKept).toEqual(['cape.png', 'sword.png']);
+  });
+
+  it('caps the names it spells out and keeps the full list in the data', async () => {
+    const host = generateHost();
+    const kept = [
+      'a.png',
+      'b.png',
+      'c.png',
+      'd.png',
+      'e.png',
+      'f.png',
+      'g.png',
+    ];
+    const result = await psdToSkeleton(
+      host,
+      sidecar({ ok: true, data: { ...SIDECAR_DATA, foreignImagesKept: kept } }),
+      { psd: 'art/hero.psd', outDir: 'generated' },
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.summary).toContain('a.png, b.png, c.png, d.png, e.png and 2 more');
+    expect(result.summary).not.toContain('g.png');
+    expect(result.data.generated.foreignImagesKept).toEqual(kept);
   });
 
   it('names the import step as the next action', async () => {

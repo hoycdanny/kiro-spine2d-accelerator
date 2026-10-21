@@ -13,11 +13,14 @@ Request:
 
 `emitLooseImages` defaults to true and writes the loose per-attachment PNGs
 the Spine editor's `File -> Import Data` resolves; the response then carries
-`imagesDir`, `imagePaths` and `staleImagesRemoved`.
+`imagesDir`, `imagePaths`, `staleImagesRemoved` (own PNGs from an earlier run
+that the current rig no longer needs) and `foreignImagesKept` (PNGs in that
+folder the tool does not own, reported but never deleted).
 
 Response:
     {"ok": true, "data": {..., "imagesDir": ".../out/images",
-     "imagePaths": [".../out/images/head.png"], "staleImagesRemoved": []}}
+     "imagePaths": [".../out/images/head.png"], "staleImagesRemoved": [],
+     "foreignImagesKept": ["cape.png"]}}
     {"ok": false, "error": {"code": "...", "message": "...", "hint": "..."}}
 
 Diagnostics go to stderr so stdout stays parseable.
@@ -135,6 +138,7 @@ def handle_psd_to_skeleton(request: dict[str, Any]) -> dict[str, Any]:
             "imagesDir": result.images_dir,
             "imagePaths": result.image_paths,
             "staleImagesRemoved": result.stale_images_removed,
+            "foreignImagesKept": result.foreign_images_kept,
         },
     }
 

@@ -221,6 +221,7 @@ class TestRunPipeline:
             folder.glob("*.png")
         )
         assert result.stale_images_removed == []
+        assert result.foreign_images_kept == []
 
     def test_loose_image_stems_match_the_skin_and_the_atlas(
         self, tmp_path: Path, full_document
@@ -255,7 +256,28 @@ class TestRunPipeline:
 
         assert declared == Path(result.images_dir)
 
-    def test_a_stale_loose_image_is_pruned_and_reported(
+    def test_a_stale_own_loose_image_is_pruned_and_reported(
+        self, tmp_path: Path, simple_document
+    ) -> None:
+        from PIL import Image
+
+        folder = tmp_path / "out" / "images"
+        folder.mkdir(parents=True)
+        # A canonical bone name this rig does not have: our own leftover.
+        Image.new("RGBA", (10, 10)).save(folder / "forearm_left.png")
+
+        result = run_pipeline(
+            tmp_path / "hero.psd",
+            tmp_path / "out",
+            name="hero",
+            document=simple_document,
+        )
+
+        assert result.stale_images_removed == ["forearm_left.png"]
+        assert result.foreign_images_kept == []
+        assert not (folder / "forearm_left.png").exists()
+
+    def test_a_foreign_loose_image_is_reported_but_kept(
         self, tmp_path: Path, simple_document
     ) -> None:
         from PIL import Image
@@ -271,8 +293,9 @@ class TestRunPipeline:
             document=simple_document,
         )
 
-        assert result.stale_images_removed == ["cape.png"]
-        assert not (folder / "cape.png").exists()
+        assert result.foreign_images_kept == ["cape.png"]
+        assert result.stale_images_removed == []
+        assert (folder / "cape.png").is_file()
 
     def test_the_toggle_off_writes_no_folder_and_warns(
         self, tmp_path: Path, simple_document
@@ -289,6 +312,7 @@ class TestRunPipeline:
         assert result.images_dir == ""
         assert result.image_paths == []
         assert result.stale_images_removed == []
+        assert result.foreign_images_kept == []
         assert any(
             "File -> Import Data will not resolve attachments" in warning
             for warning in result.warnings
