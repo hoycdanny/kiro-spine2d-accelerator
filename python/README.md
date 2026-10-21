@@ -1,9 +1,15 @@
 # spine-psd-sidecar
 
-Generates a Spine rig from a layered PSD: skeleton JSON, a texture atlas, and the atlas page
-image. It bypasses the Spine editor entirely, which is what makes it usable on a trial license —
-the generated files are then imported into Spine with `spine_import` (that step does need a
-license, since it writes a project file).
+Generates a Spine rig from a layered PSD: skeleton JSON, a texture atlas, the atlas page image,
+and an `images/` folder of loose per-attachment PNGs next to the JSON. It bypasses the Spine
+editor entirely, which is what makes it usable on a trial license — the generated files are then
+imported into Spine with `spine_import` (that step does need a license, since it writes a project
+file).
+
+The `images/` folder is not a convenience: the editor's `File -> Import Data` resolves every
+attachment as `<skeleton.images>/<attachmentName>.png` relative to the JSON and never reads the
+`.atlas`, so without it the import succeeds and the canvas is blank. The runtime and
+`render_preview` are the other way round — they read the atlas and ignore these files.
 
 This is a **sidecar**, not an MCP server. The TypeScript execution layer owns the single tool
 surface and calls this process with one JSON request on stdin.
@@ -23,12 +29,18 @@ echo '{"command":"probe"}' | uv run --project python spine-psd-sidecar
 ```
 
 ```json
-{"command": "psd_to_skeleton", "psdPath": "art/hero.psd", "outDir": "export", "name": "hero"}
+{"command": "psd_to_skeleton", "psdPath": "art/hero.psd", "outDir": "export", "name": "hero",
+ "emitLooseImages": true}
 ```
 
 Responses are `{"ok": true, "data": {...}}` or
 `{"ok": false, "error": {"code": "...", "message": "...", "hint": "..."}}`.
 Diagnostics go to stderr so stdout stays parseable.
+
+`emitLooseImages` defaults to true; set it to false to write only the atlas path. The success
+payload reports `imagesDir` (the folder), `imagePaths` (the written `<attachment>.png` files) and
+`staleImagesRemoved` (names of PNGs pruned from that folder, since a leftover from an earlier run
+is exactly what the editor would silently pick up).
 
 ## Layer naming
 
