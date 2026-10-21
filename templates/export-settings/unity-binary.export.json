@@ -1,0 +1,10 @@
+{
+  "class": "export-binary",
+  "extension": ".skel.bytes",
+  "nonessential": false,
+  "cleanUp": false,
+  "warnings": true,
+  "packAtlas": null,
+  "input": "",
+  "output": ""
+}

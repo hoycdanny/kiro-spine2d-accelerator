@@ -1,0 +1,18 @@
+{
+  "description": "Per-project limits for skeleton and atlas complexity. These are starting points, not Spine limits: raise or lower them to match the target platform. Mobile projects usually tighten mesh vertex and atlas page budgets.",
+  "version": 1,
+  "budgets": {
+    "maxBones": 150,
+    "maxBoneDepth": 12,
+    "maxSlots": 120,
+    "maxMeshVertices": 200,
+    "maxTotalMeshVertices": 2000,
+    "maxAnimationDuration": 30,
+    "maxTimelinesPerAnimation": 400,
+    "maxAtlasPages": 4,
+    "minPackingEfficiency": 0.6
+  },
+  "durationOutlierFactor": 4,
+  "expectPremultipliedAlpha": null,
+  "disabled": []
+}

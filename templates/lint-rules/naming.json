@@ -1,0 +1,36 @@
+{
+  "description": "Naming conventions for Spine skeleton entities. Patterns are JavaScript regular expressions applied to the exported name. Severity is one of error, warning, info. Names listed in exempt are skipped.",
+  "version": 1,
+  "naming": {
+    "bone": {
+      "pattern": "^[a-z0-9]+(?:[-_][a-z0-9]+)*$",
+      "severity": "warning",
+      "exempt": ["root"]
+    },
+    "slot": {
+      "pattern": "^[a-z0-9]+(?:[-_][a-z0-9]+)*$",
+      "severity": "warning",
+      "exempt": []
+    },
+    "skin": {
+      "pattern": "^[a-z0-9]+(?:[-_/][a-z0-9]+)*$",
+      "severity": "warning",
+      "exempt": ["default"]
+    },
+    "animation": {
+      "pattern": "^[a-z0-9]+(?:[-_][a-z0-9]+)*$",
+      "severity": "warning",
+      "exempt": []
+    },
+    "event": {
+      "pattern": "^[a-z0-9]+(?:[-_][a-z0-9]+)*$",
+      "severity": "info",
+      "exempt": []
+    },
+    "attachment": {
+      "pattern": "^[a-z0-9]+(?:[-_/][a-z0-9]+)*$",
+      "severity": "info",
+      "exempt": []
+    }
+  }
+}
