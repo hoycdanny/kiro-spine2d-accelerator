@@ -1,0 +1,329 @@
+# Spine 2D Accelerator Power
+
+## Overview
+
+This package automates Spine 2D asset work: skeleton data inspection and linting, texture
+packing settings, batch export through the Spine command line interface, PSD-to-rig generation,
+headless animation preview, visual regression, and runtime integration for Unity, web and Godot.
+
+### Architecture
+
+- **AI Layer**: understands intent, picks the workflow, chains tool calls
+- **spine-mcp = Execution Layer**: the MCP server in this package. It drives the Spine CLI in a
+  separate process and operates on exported skeleton/atlas data. It talks stdio only and opens no
+  network port.
+- **This Package = Intelligence Layer**: POWER.md (this file), steering files and preset templates
+  that carry the Spine domain knowledge
+
+### The one architectural fact that shapes everything
+
+**Spine has no in-editor API, and no way to drive an editor window.** Unlike engine-side bridges
+that live inside the editor process, Spine's only official automation surface is its command line
+interface, which starts a *separate* Spine process, performs export / import / pack / clean-up /
+info, and exits.
+
+Two consequences that this Power is built around:
+
+1. **"Add a bone", "open this project", "select that slot" are not possible.** Anything that
+   changes a `.spine` project happens through the CLI's whole-file operations, or by generating
+   data and importing it.
+2. **A running Spine editor blocks the CLI.** Verified on Spine 4.3.26: when an editor window is
+   already open, the launcher hands the request to that instance, prints `Started.`, and never
+   returns. Every CLI tool here has a timeout and reports this case explicitly. Tell the developer
+   to close the Spine editor before running CLI operations.
+
+### Key Principles
+
+1. **Deterministic work belongs in code.** Skeleton JSON and atlas parsing, validation, diffing and
+   settings generation are implemented as tested functions, never as "the model edits the JSON".
+2. **Capability gate before subprocess.** The Spine trial cannot save, pack, or export. Write tools
+   check the installed edition first and refuse with the exact command line they would have run, so
+   the work can be repeated verbatim once a license is in place.
+3. **Version locking is a first-class concern.** Editor and runtime versions must match, and the
+   launcher can silently update itself. Every CLI tool accepts `--update`.
+4. **Paths: read anywhere, write only inside the workspace.** Spine projects commonly live outside
+   the workspace; generated output does not.
+5. **No shell string interpolation.** Arguments go to the process as an array, so paths with spaces
+   and quotes need no escaping and cannot inject.
+
+### Core Behaviors
+
+**These behaviors are always active when this Power is loaded.**
+
+#### Language
+
+Respond in the language the developer uses. If they write in Chinese, respond in Traditional
+Chinese (繁體中文). Match any other language they use. When no preference is clear, default to
+Traditional Chinese. Technical terms may stay in English with an explanation on first use. Code
+identifiers always stay in English.
+
+#### Auto-Activation
+
+When the spine-mcp tools are available, this Power is active. Any request involving skeletons,
+animations, atlases, `.spine` projects, exported JSON/`.skel` data, or Spine runtime integration
+should use these workflows — the developer does not need to say "Spine".
+
+#### Steering-First Approach
+
+Before any multi-step operation, read the relevant steering file:
+
+| Domain | Steering File |
+|--------|--------------|
+| General Spine concepts, file formats | `spine-general.md` |
+| Export, export settings, batch export | `export-automation.md` |
+| Texture packing, `pack.json`, atlas problems | `texture-packing.md` |
+| Skeleton data inspection and linting | `skeleton-data-lint.md` |
+| Editor/runtime version matching, `--update` | `version-compatibility.md` |
+| PSD to rig generation | `psd-to-rig.md` |
+| Headless preview and visual regression | `visual-regression.md` |
+| Unity integration | `runtime-integration-unity.md` |
+| Web integration | `runtime-integration-web.md` |
+| Godot integration | `runtime-integration-godot.md` |
+| CI pipelines and gates | `ci-pipeline.md` |
+| Multi-step automation | `workflow-automation.md` |
+| Language preference | `language-zh-tw.md` |
+
+#### Safety & Quality Checks
+
+- **Probe first.** Call `spine_env_probe` before any write operation. It reports the edition, the
+  capability matrix, the matching runtime branch, and whether the Python sidecar is ready.
+- **Close the editor.** Before any CLI call, remind the developer to close Spine if a window is
+  open. A `CLI_TIMEOUT` almost always means an editor had the request.
+- **`spine_cleanup` rewrites the project.** It requires `confirm: true`, and there is no undo
+  outside version control. Prefer `spine_export` with `clean: true`, which cleans the exported data
+  and leaves the project untouched.
+- **Lint after export.** Run `skeleton_lint` with the atlas after any export. A missing atlas region
+  renders as nothing at runtime and is invisible in the exported JSON alone.
+- **Check premultiplied alpha against the target.** Mixed PMA across pages, or PMA disagreeing with
+  the runtime's colour space, is the most common cause of wrong-looking edges.
+
+#### Baseline: Spine 4.2 data, local editor may differ
+
+This Power targets the **4.2** data baseline, because that is where the runtimes are complete
+across platforms. The local editor may be newer; `spine_env_probe` reports both and warns when they
+diverge. For exports consumed by 4.2 runtimes, pass `update: "4.2.xx"`.
+
+## Setup
+
+### Prerequisites
+
+1. **Spine editor.** A licensed Spine (Essential or Professional) for anything that writes. The
+   trial works for read-only inspection and for everything that operates on exported data.
+2. **Node.js 18+** for the MCP server.
+3. Optional: **uv** for the PSD generation sidecar; **playwright-core** plus a Chromium build for
+   headless preview and visual regression. Everything else works without them.
+
+### Installation
+
+```bash
+npm install
+npm run build          # compiles src/ to dist/
+uv sync --project python   # optional: PSD generation
+npx playwright install chromium   # optional: headless preview
+```
+
+Then point the MCP client at the server (see `mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "spine-mcp": {
+      "command": "node",
+      "args": ["./dist/server.js"],
+      "transport": "stdio"
+    }
+  }
+}
+```
+
+Optional environment variables:
+
+| Variable | Purpose |
+|---|---|
+| `SPINE_EXECUTABLE` | Explicit path to the Spine CLI executable. On Windows this must be the `.com` build. |
+| `SPINE_USER_DATA` | Explicit Spine user data directory (holds `spine.log`, `version.txt`, `examples/`). |
+| `SPINE_WORKSPACE_ROOT` | Overrides the write-confinement root. Defaults to the process working directory. |
+
+> **Security note**: the server speaks stdio and listens on nothing. There is no network surface to
+> authenticate. If it is ever changed to an HTTP transport, that decision needs its own review.
+
+### Pre-Tool Hook
+
+`hooks/pre-spine-tool.kiro.hook` fires on prompt submit and reminds the AI to activate this Power
+and read the matching steering file before acting. Delete or rename the file to disable it.
+
+## Available MCP Tools
+
+> **Verification status.** Tool names, arguments and result shapes below are implemented and
+> covered by tests in this repository. Behaviour verified against a **real Spine 4.3.26 Trial**:
+> `--version` output, the editor-handoff hang, and the trial capability locks. Behaviour verified
+> against **real headless Chromium**: preview rendering and visual regression. Behaviour verified
+> against a **real PSD file**: the generation pipeline. **Not yet verified against a licensed
+> editor**: the export / pack / unpack / import / clean-up command lines are assembled and gated
+> correctly, but no successful licensed run has been observed — see "Known gaps".
+
+### Group A — CLI orchestration
+
+| Tool | Purpose | Needs a license |
+|------|---------|-----------------|
+| `spine_env_probe` | Locate the executable; report edition, version, capability matrix, runtime branch, sidecar state | no |
+| `spine_project_info` | `-i`: Spine version, skeleton and animation counts for a project, data file, or folder | no |
+| `spine_export` | `-e`: export skeleton data, with a settings file or a `json`/`binary`/`json+pack`/`binary+pack` shorthand | **yes** |
+| `spine_pack` | `-p`: pack a folder of images into an atlas | **yes** |
+| `spine_unpack` | `-c`: write the individual images back out of an atlas | **yes** |
+| `spine_import` | `-r`: import JSON/binary/project data into a `.spine` project | **yes** |
+| `spine_cleanup` | `-i -m`: animation clean up, saving the project in place. Requires `confirm: true` | **yes** |
+| `spine_export_settings_capture` | `--last-export-settings`: write out a project's real export settings, used to calibrate the bundled templates | no |
+| `spine_batch` | Chain several commands into one Spine invocation, which avoids paying editor startup per project | depends on contents |
+
+### Group B — data layer (no Spine installation required)
+
+| Tool | Purpose |
+|------|---------|
+| `skeleton_inspect` | Bones and hierarchy depth, slots and blend modes, skins, attachment types, mesh vertex counts, IK/transform/path/physics constraints, events, every animation with duration and timeline counts, nonessential-data presence; optional atlas cross-check |
+| `atlas_inspect` | Pages (size, format, filters, pma), region counts, rotated and whitespace-stripped regions, packing efficiency, duplicate names, non power-of-two pages. Handles both the 4.0+ `bounds`/`offsets` format and the legacy `xy`/`size`/`orig`/`offset` format |
+| `skeleton_diff` | Semantic diff of two exports: bones added/removed/reparented, slots rebound or reordered, attachments retargeted, constraints, events, animation duration and timeline changes. Distinguishes "the hash changed" from "the data changed" |
+| `skeleton_lint` | Structural invariants, naming conventions, complexity budgets, export settings and atlas problems, each with a severity and a fix. Fails as `GATE_FAILED` for CI |
+| `export_settings_build` | Build an export settings JSON by diffing a known-good template. Refuses override keys the template lacks |
+| `pack_settings_build` | Build a `pack.json` with every documented field validated by type, range and enum |
+
+### Group C — generation
+
+| Tool | Purpose |
+|------|---------|
+| `psd_to_skeleton` | Layered PSD to skeleton JSON + atlas + page image, then inspect and lint the result. Runs through the Python sidecar. Works on a trial license; `spine_import` afterwards does not |
+
+### Group D — verification
+
+| Tool | Purpose |
+|------|---------|
+| `render_preview` | Render chosen moments of an animation with spine-ts in headless Chromium and write PNGs. Fixed-step time advance and a single camera framing make the output reproducible |
+| `visual_regression` | Compare a fresh render against baseline PNGs, write diff images, fail as `GATE_FAILED`. Baselines are bound to the skeleton hash |
+
+### Group E — integration
+
+| Tool | Purpose |
+|------|---------|
+| `runtime_scaffold` | Per-target integration: required file names, a controller script with a mix table derived from the skeleton, and a README. Targets `unity`, `web`, `godot` |
+
+### Result shape
+
+Every tool answers with a short human-readable summary plus a JSON block. Failures carry a stable
+code, a message, and a `hint` that says what to do next:
+
+```
+SPINE_NOT_FOUND · CAPABILITY_DENIED · PATH_NOT_ALLOWED · INPUT_MISSING
+CLI_FAILED · CLI_TIMEOUT · PARSE_FAILED · VALIDATION_FAILED
+GATE_FAILED · DEPENDENCY_MISSING · INVALID_ARGUMENT
+```
+
+## Workflow Guides
+
+### Workflow 1: Animator assistant — inspect and audit an export
+
+**"What's in this skeleton?" / "Is this export healthy?"**
+
+1. `skeleton_inspect` with both `input` and `atlas`. The cross-check is the point: a region the
+   skeleton needs but the atlas lacks renders as nothing at runtime.
+2. `skeleton_lint` with the same pair, plus `rules` if the team has its own files under
+   `templates/lint-rules/`.
+3. Report findings grouped by severity, with the fix each one carries.
+4. If anything is wrong in the data rather than the export settings, the fix belongs in the editor —
+   say so rather than editing the JSON.
+
+**Error handling**: a `PARSE_FAILED` on skeleton data usually means the export used the
+"JavaScript" or "Minimal" format, which omit quotes. Re-export as plain JSON.
+
+### Workflow 2: Asset pipeline — batch export
+
+**"Export every project in art/ for Unity."**
+
+1. `spine_env_probe`. A trial stops here with `CAPABILITY_DENIED`; report the blocked operations.
+2. `export_settings_build` with the `unity-binary` template, overriding `output`.
+3. `pack_settings_build` with the `unity-default` template (`.atlas.txt`, straight alpha).
+4. `spine_batch` with one `export` command per project, `update: "4.2.xx"` to pin the editor.
+5. `skeleton_lint` each exported pair.
+6. Report: projects exported, artifacts written, lint findings.
+
+**The trap**: `-e json+pack` / `binary+pack` use Spine's *default* settings and ignore `pack.json`
+files entirely. Pass a settings file, or pack separately with `spine_pack`.
+
+### Workflow 3: PSD to rig
+
+**"Turn this PSD into a Spine rig."**
+
+1. `spine_env_probe` and confirm `sidecar.available`.
+2. `psd_to_skeleton` with the PSD and an output folder.
+3. Read back `virtualBones` (bones created because no layer provided them) and `unmappedLayers`
+   (layers whose names matched no body part) and relay both — those are the two things the artist
+   can act on.
+4. `spine_import` to turn the data into a `.spine` project (needs a license).
+5. Tell the developer what the generator does *not* do: no meshes, no weights, no animation beyond
+   an empty setup animation. Those belong in the editor.
+
+### Workflow 4: Visual regression
+
+**"Did this re-export change how it looks?"**
+
+1. `skeleton_diff` first. A semantic diff explains *what* changed; pixels only show *that*
+   something changed.
+2. `visual_regression` with a stable `times` list and a per-animation `baselineDir`.
+3. On `GATE_FAILED`, report the failing frames and the diff images.
+4. When the skeleton hash changed, the tool says so instead of reporting pixel noise: review the
+   semantic diff, then re-run with `mode: "update"` to rebuild the baseline.
+
+Role split: Spine's own image/video export is the authoritative visual output, and it needs a
+windowing system plus OpenGL. The headless renderer here is the automation path.
+
+### Workflow 5: Runtime integration
+
+**"Get this into my Unity project."**
+
+1. `runtime_scaffold` with `target: "unity"`, the skeleton and the atlas.
+2. Apply the renames it reports. They are not cosmetic: spine-unity cannot load a plain `.atlas` or
+   `.skel`.
+3. Copy the files into a new empty folder under `Assets/`; Unity generates the `_Atlas`,
+   `_Material` and `_SkeletonData` assets.
+4. Add the generated controller to the GameObject created from `_SkeletonData`.
+5. Scene assembly beyond that point belongs to a Unity-side tool.
+
+### Workflow 6: CI
+
+See `steering/ci-pipeline.md` and `templates/ci/`. The shape is: pin the editor with `--update`,
+batch export, lint as a gate, visual regression as a gate. Image and video export need a windowing
+system and OpenGL, so CI should export data and pack atlases only.
+
+## Demo
+
+`npm run demo` runs a scripted, self-narrating path through nine steps against the real server:
+environment probe, PSD to rig, inspect and lint, semantic diff of an animator's change, headless
+render, visual baseline, a deliberately broken atlas caught with a diff image, Unity scaffold, and
+the licensing refusal. It works on a trial license and writes only into `demo/out/`.
+
+When a developer asks for a demonstration, run that rather than improvising: it is reproducible,
+and `demo/README.md` carries the narration for each step in five languages.
+
+## Templates
+
+| Folder | Contents |
+|--------|----------|
+| `templates/export-settings/` | `unity-binary`, `web-json`, `ci-batch`, plus a README about provenance and calibration |
+| `templates/pack-settings/` | `unity-default` (`.atlas.txt`, straight alpha), `web-pot` (power-of-two, polygon packing, multi-scale), `pixelart` (nearest filtering, no stripping or rotation) |
+| `templates/lint-rules/` | `naming.json`, `budgets.json` — the editable copies of the built-in defaults |
+| `templates/ci/` | GitHub Actions workflow and a PowerShell script |
+
+## Known gaps
+
+Stated plainly so they are not mistaken for working features:
+
+- **No licensed-editor verification.** Export, pack, unpack, import and clean-up are implemented,
+  gated and unit-tested, but have not been observed succeeding against a licensed Spine.
+- **Export settings field names are not publicly documented.** The bundled templates are shaped
+  from the documented export dialog. Calibrate them with `spine_export_settings_capture` before
+  trusting them in CI. `pack.json` has no such problem: its schema is documented and fully
+  validated here.
+- **Binary `.skel` is not parsed.** The data-layer tools read JSON exports. Binary is the right
+  shipping format, so inspect the JSON export of the same project, or re-export as JSON for audits.
+- **No mesh or weight generation.** The PSD pipeline produces region attachments only.
+- **Godot support is planning-level.** The scaffold encodes the file-naming rules and the two
+  integration paths; it has not been run against a Godot project.

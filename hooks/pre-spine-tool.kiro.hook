@@ -1,0 +1,12 @@
+{
+  "name": "Spine 2D Power Auto Activate",
+  "version": "1.0.0",
+  "description": "每次對話都強制 activate Power 並載入相關 steering file",
+  "when": {
+    "type": "promptSubmit"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "You MUST call kiroPowers(action=\"activate\", powerName=\"kiro-spine2d-accelerator\") NOW, every single time, no exceptions. Then call kiroPowers(action=\"readSteering\", powerName=\"kiro-spine2d-accelerator\", steeringFile=\"<relevant>.md\") to load the steering file matching the task. Do NOT skip this even if you think you already did it.\n\nSteering file selection:\n- Spine concepts, file formats, what is possible -> spine-general.md\n- Export, export settings, batch export -> export-automation.md\n- Texture packing, pack.json, atlas problems -> texture-packing.md\n- Inspecting or auditing exported data -> skeleton-data-lint.md\n- Version mismatch, --update, upgrades -> version-compatibility.md\n- PSD to rig generation -> psd-to-rig.md\n- Preview, screenshots, visual regression -> visual-regression.md\n- Unity integration -> runtime-integration-unity.md\n- Web / spine-ts integration -> runtime-integration-web.md\n- Godot integration -> runtime-integration-godot.md\n- CI, pipelines, gates -> ci-pipeline.md\n- Multi-step automation -> workflow-automation.md\n- Language preference -> language-zh-tw.md\n\nFacts that always hold for this Power:\n1. Spine has no in-editor API. The CLI starts a separate process; you cannot drive an open editor window.\n2. An open Spine editor causes a CLI hang that never returns. Tell the developer to close it; a CLI_TIMEOUT is almost always this.\n3. The Spine trial cannot save, pack, or export. Call spine_env_probe before any write operation.\n4. Editor and runtime major.minor must match, and the launcher can update itself. Pin --update in CI."
+  }
+}
