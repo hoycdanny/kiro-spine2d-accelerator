@@ -126,6 +126,17 @@ class TestPipelineOnRealPsd:
         # The PSD has no hip/chest/neck layers, so those are virtual.
         assert {"root", "hip", "chest", "neck"} <= set(result.virtual_bones)
 
+    def test_writes_the_loose_images_the_editor_imports(
+        self, character_psd: Path, tmp_path: Path
+    ) -> None:
+        result = run_pipeline(character_psd, tmp_path / "out", name="character")
+
+        folder = Path(result.images_dir)
+        for attachment in ("torso", "head", "arm_left", "thigh_left"):
+            loose = folder / f"{attachment}.png"
+            assert loose.exists(), f"missing loose image for {attachment}"
+            assert Image.open(loose).mode == "RGBA"
+
     def test_hidden_layers_are_skipped(self, tmp_path: Path) -> None:
         psd = PSDImage.new("RGBA", (100, 200))
         psd.append(

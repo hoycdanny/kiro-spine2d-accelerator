@@ -10,6 +10,7 @@ import hashlib
 import json
 from typing import Any
 
+from .loose_images import DEFAULT_IMAGES_PATH
 from .rig_builder import BuiltRig
 
 #: Spine version the generated data targets. Must match the runtime in use.
@@ -19,7 +20,7 @@ TARGET_SPINE_VERSION = "4.2.37"
 def build_skeleton_json(
     rig: BuiltRig,
     name: str,
-    images_path: str = "./images/",
+    images_path: str = DEFAULT_IMAGES_PATH,
     fps: int = 30,
 ) -> dict[str, Any]:
     """Build the skeleton data structure for a rig."""

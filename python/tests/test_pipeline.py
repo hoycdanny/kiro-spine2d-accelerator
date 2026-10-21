@@ -204,6 +204,96 @@ class TestRunPipeline:
             needed.update(slot_attachments.keys())
         assert needed <= set(result.region_names)
 
+    def test_loose_images_land_next_to_the_skeleton(
+        self, tmp_path: Path, full_document
+    ) -> None:
+        result = run_pipeline(
+            tmp_path / "hero.psd",
+            tmp_path / "out",
+            name="hero",
+            document=full_document,
+        )
+
+        folder = Path(result.skeleton_path).parent / "images"
+        assert folder.is_dir()
+        assert Path(result.images_dir) == folder.resolve()
+        assert sorted(Path(path) for path in result.image_paths) == sorted(
+            folder.glob("*.png")
+        )
+        assert result.stale_images_removed == []
+
+    def test_loose_image_stems_match_the_skin_and_the_atlas(
+        self, tmp_path: Path, full_document
+    ) -> None:
+        result = run_pipeline(
+            tmp_path / "hero.psd",
+            tmp_path / "out",
+            name="hero",
+            document=full_document,
+        )
+
+        skeleton = json.loads(Path(result.skeleton_path).read_text(encoding="utf-8"))
+        attachment_keys = set(skeleton["skins"][0]["attachments"].keys())
+        stems = {path.stem for path in (Path(result.images_dir)).glob("*.png")}
+
+        assert stems == attachment_keys
+        assert stems == set(result.region_names)
+
+    def test_the_declared_images_path_resolves_to_the_created_folder(
+        self, tmp_path: Path, full_document
+    ) -> None:
+        result = run_pipeline(
+            tmp_path / "hero.psd",
+            tmp_path / "out" / "nested" / "deeper",
+            name="hero",
+            document=full_document,
+        )
+
+        skeleton_path = Path(result.skeleton_path)
+        skeleton = json.loads(skeleton_path.read_text(encoding="utf-8"))
+        declared = (skeleton_path.parent / skeleton["skeleton"]["images"]).resolve()
+
+        assert declared == Path(result.images_dir)
+
+    def test_a_stale_loose_image_is_pruned_and_reported(
+        self, tmp_path: Path, simple_document
+    ) -> None:
+        from PIL import Image
+
+        folder = tmp_path / "out" / "images"
+        folder.mkdir(parents=True)
+        Image.new("RGBA", (10, 10)).save(folder / "cape.png")
+
+        result = run_pipeline(
+            tmp_path / "hero.psd",
+            tmp_path / "out",
+            name="hero",
+            document=simple_document,
+        )
+
+        assert result.stale_images_removed == ["cape.png"]
+        assert not (folder / "cape.png").exists()
+
+    def test_the_toggle_off_writes_no_folder_and_warns(
+        self, tmp_path: Path, simple_document
+    ) -> None:
+        result = run_pipeline(
+            tmp_path / "hero.psd",
+            tmp_path / "out",
+            name="hero",
+            emit_loose_images=False,
+            document=simple_document,
+        )
+
+        assert not (Path(result.skeleton_path).parent / "images").exists()
+        assert result.images_dir == ""
+        assert result.image_paths == []
+        assert result.stale_images_removed == []
+        assert any(
+            "File -> Import Data will not resolve attachments" in warning
+            for warning in result.warnings
+        )
+
     def test_an_unrecognisable_psd_fails_with_an_explanation(self, tmp_path: Path) -> None:
         document = PsdDocument(
             width=10,
@@ -215,3 +305,40 @@ class TestRunPipeline:
         )
         assert result.problems
         assert "No layer name matched" in result.problems[0]
+
+
+class TestLooseImagesLeaveTheExportInvariant:
+    """The loose PNGs are additive files, nothing else may move.
+
+    The skeleton hash and every visual-regression baseline bound to it depend
+    on the JSON staying byte-identical, and the attachment geometry depends on
+    the atlas and the page.
+    """
+
+    def test_atlas_page_and_skeleton_are_identical_with_the_toggle_off(
+        self, tmp_path: Path, full_document
+    ) -> None:
+        with_images = run_pipeline(
+            tmp_path / "hero.psd",
+            tmp_path / "with",
+            name="hero",
+            document=full_document,
+        )
+        without_images = run_pipeline(
+            tmp_path / "hero.psd",
+            tmp_path / "without",
+            name="hero",
+            emit_loose_images=False,
+            document=full_document,
+        )
+
+        assert Path(with_images.atlas_path).read_text(encoding="utf-8") == Path(
+            without_images.atlas_path
+        ).read_text(encoding="utf-8")
+        assert (
+            Path(with_images.page_paths[0]).read_bytes()
+            == Path(without_images.page_paths[0]).read_bytes()
+        )
+        assert Path(with_images.skeleton_path).read_text(encoding="utf-8") == Path(
+            without_images.skeleton_path
+        ).read_text(encoding="utf-8")

@@ -8,11 +8,16 @@ one place that enforces capability gates and path safety.
 Request:
     {"command": "psd_to_skeleton", "psdPath": "...", "outDir": "...",
      "name": "hero", "padding": 2, "maxSize": 4096,
-     "premultipliedAlpha": false}
+     "premultipliedAlpha": false, "emitLooseImages": true}
     {"command": "probe"}
 
+`emitLooseImages` defaults to true and writes the loose per-attachment PNGs
+the Spine editor's `File -> Import Data` resolves; the response then carries
+`imagesDir`, `imagePaths` and `staleImagesRemoved`.
+
 Response:
-    {"ok": true, "data": {...}}
+    {"ok": true, "data": {..., "imagesDir": ".../out/images",
+     "imagePaths": [".../out/images/head.png"], "staleImagesRemoved": []}}
     {"ok": false, "error": {"code": "...", "message": "...", "hint": "..."}}
 
 Diagnostics go to stderr so stdout stays parseable.
@@ -94,6 +99,7 @@ def handle_psd_to_skeleton(request: dict[str, Any]) -> dict[str, Any]:
             padding=int(request.get("padding", 2)),
             max_size=int(request.get("maxSize", 4096)),
             premultiplied_alpha=bool(request.get("premultipliedAlpha", False)),
+            emit_loose_images=bool(request.get("emitLooseImages", True)),
         )
     except ModuleNotFoundError as error:
         return _error(
@@ -126,6 +132,9 @@ def handle_psd_to_skeleton(request: dict[str, Any]) -> dict[str, Any]:
             "virtualBones": result.virtual_bones,
             "unmappedLayers": result.unmapped_layers,
             "warnings": result.warnings,
+            "imagesDir": result.images_dir,
+            "imagePaths": result.image_paths,
+            "staleImagesRemoved": result.stale_images_removed,
         },
     }
 
