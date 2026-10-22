@@ -4,6 +4,7 @@ import {
   PURCHASE_URL,
   buildInteractiveHtml,
   embedJson,
+  embedScriptSource,
 } from '../../src/interactive-preview-page';
 import { RENDERABLE_ATLAS, RENDERABLE_SKELETON, toJsonText } from '../helpers/fixtures';
 
@@ -46,6 +47,18 @@ describe('embedJson', () => {
   it('stays parseable as JSON after escaping', () => {
     const value = { text: '<b>&</b>\u2028end' };
     expect(JSON.parse(embedJson(value))).toEqual(value);
+  });
+});
+
+describe('embedScriptSource', () => {
+  it('cannot end the script element early', () => {
+    const escaped = embedScriptSource('var marker = "</script><script>alert(1)";');
+    expect(escaped).not.toContain('</script');
+    expect(escaped).toContain('<\\/script');
+  });
+
+  it('leaves a bundle without that sequence byte-identical', () => {
+    expect(embedScriptSource(RUNTIME_SOURCE)).toBe(RUNTIME_SOURCE);
   });
 });
 
@@ -97,6 +110,28 @@ describe('buildInteractiveHtml', () => {
 
     expect(html).toContain('aria-pressed=');
     expect(html).toContain('aria-label="Interactive Spine skeleton preview of hero.json"');
+  });
+
+  it('lets the visible "Timeline" text be the slider\'s accessible name', () => {
+    // An aria-label on the slider would override that visible text (WCAG 2.5.3).
+    const slider = /<input id="timeline"[^>]*>/.exec(html);
+    expect(slider).not.toBeNull();
+    expect(slider?.[0]).not.toContain('aria-label');
+  });
+
+  it('reports a viewer that fails after the guarded blocks', () => {
+    // The viewer is async: a discarded promise means a page stuck on
+    // "Loading the embedded skeleton…" with no message anywhere.
+    expect(html).toContain('window.__spineInteractiveViewer(');
+    expect(html).toContain('.catch(function (cause)');
+    expect(html).toContain('window.__spineViewerError = message;');
+  });
+
+  it('escapes the runtime bundle the way every other payload is escaped', () => {
+    const risky = buildInteractiveHtml('var x = "</script>";', input());
+    const scripts = [...risky.matchAll(/<\/script/g)];
+    // Three closing tags: the runtime, the viewer and the bootstrap.
+    expect(scripts).toHaveLength(3);
   });
 
   it('uses the requested canvas size and title', () => {

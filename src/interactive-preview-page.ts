@@ -67,6 +67,20 @@ export function embedJson(value: unknown): string {
     .replace(/\u2029/g, '\\u2029');
 }
 
+/**
+ * Neutralise `</script` inside raw script text.
+ *
+ * Everything else reaches the page through `embedJson`; the runtime bundle
+ * is the one payload inlined verbatim, and the sequence anywhere inside it
+ * — even in a string literal — would end the element early and truncate
+ * the page with no error anywhere. The installed 4.2.120 bundle contains
+ * none, so this guards future bundles. `<\/script` parses in JavaScript
+ * exactly like `</script`.
+ */
+export function embedScriptSource(source: string): string {
+  return source.replace(/<\/script/gi, '<\\/script');
+}
+
 /** Escape text destined for HTML body or attribute content. */
 function escapeHtml(value: string): string {
   return value
@@ -155,13 +169,22 @@ window.__spineInteractiveViewer = async function (input) {
   const animations = skeletonData.animations.map(function (a) { return a.name; });
   const skins = skeletonData.skins.map(function (s) { return s.name; });
 
-  const skeleton = new spine.Skeleton(skeletonData);
-  if (input.skin && skins.indexOf(input.skin) !== -1) {
-    skeleton.setSkinByName(input.skin);
+  // Shader compilation and a lost context both surface here, so this block
+  // reports through fail() like the four before it.
+  let skeleton;
+  let state;
+  let renderer;
+  try {
+    skeleton = new spine.Skeleton(skeletonData);
+    if (input.skin && skins.indexOf(input.skin) !== -1) {
+      skeleton.setSkinByName(input.skin);
+    }
+    state = new spine.AnimationState(new spine.AnimationStateData(skeletonData));
+    renderer = new spine.SceneRenderer(canvas, gl);
+  } catch (cause) {
+    fail('The skeleton could not be prepared for drawing: ' + cause);
+    return;
   }
-
-  const state = new spine.AnimationState(new spine.AnimationStateData(skeletonData));
-  const renderer = new spine.SceneRenderer(canvas, gl);
 
   let animationName =
     input.animation && animations.indexOf(input.animation) !== -1
@@ -204,7 +227,11 @@ window.__spineInteractiveViewer = async function (input) {
 
   // Re-pose from the setup pose in fixed steps rather than jumping: one
   // large delta would land physics constraints somewhere no runtime would.
-  function seekTo(time) {
+  function seekTo(requestedTime) {
+    // Clamp to the work the step budget can actually cover: folding the
+    // remainder into the final advance would hand physics the one large
+    // delta the fixed stepping exists to avoid.
+    const time = Math.min(Math.max(requestedTime, 0), MAX_STEPS * STEP_SECONDS);
     skeleton.setToSetupPose();
     state.clearTracks();
     if (!animationName) {
@@ -353,23 +380,34 @@ window.__spineInteractiveViewer = async function (input) {
         }
       }
       syncTimeline();
+      // Only a pose that moved needs a new frame. A paused page left open
+      // on someone's machine would otherwise hold the GPU busy forever;
+      // every control that changes the image draws on demand.
+      draw();
     }
 
-    draw();
     requestAnimationFrame(loop);
   }
 
-  frameCamera();
-  seekTo(0);
-  syncTimeline();
-  setPlaying(playing);
-  draw();
-  requestAnimationFrame(loop);
-
+  // Written before the framing pass: that pass re-poses the skeleton 12
+  // times, and until it finishes the page would still read "Loading…".
   status.textContent =
     (skeletonData.version ? 'Spine ' + skeletonData.version + ' data' : 'Skeleton data') +
     ' · ' + animations.length + ' animation(s) · ' + skins.length + ' skin(s) · ' +
     atlas.pages.length + ' atlas page(s), all embedded in this file.';
+
+  try {
+    frameCamera();
+    seekTo(0);
+    syncTimeline();
+    setPlaying(playing);
+    draw();
+  } catch (cause) {
+    fail('The first frame could not be drawn: ' + cause);
+    return;
+  }
+
+  requestAnimationFrame(loop);
   window.__spineViewerReady = true;
 };
 `;
@@ -468,8 +506,9 @@ export function buildInteractiveHtml(
   <button id="play-toggle" type="button" aria-pressed="true">Pause</button>
 
   <label for="timeline">Timeline</label>
-  <input id="timeline" type="range" min="0" max="1" step="0.01" value="0"
-    aria-label="Animation time in seconds">
+  <!-- No aria-label here: it would override the visible "Timeline" text
+       (WCAG 2.5.3), and aria-valuetext already announces the value. -->
+  <input id="timeline" type="range" min="0" max="1" step="0.01" value="0">
   <span id="time-readout">0.00 / 0.00 s</span>
 
   <label for="animation-select">Animation</label>
@@ -497,9 +536,22 @@ export function buildInteractiveHtml(
   <a href="${PURCHASE_URL}">${PURCHASE_URL}</a>
 </footer>
 
-<script>${runtimeSource}</script>
+<script>${embedScriptSource(runtimeSource)}</script>
 <script>${VIEWER_SCRIPT}</script>
-<script>window.__spineInteractiveViewer(${embedJson(input)});</script>
+<script>
+window.__spineInteractiveViewer(${embedJson(input)}).catch(function (cause) {
+  // The viewer is async, so without this a failure past the skeleton load
+  // would be an unhandled rejection: a page stuck on "Loading…" and no
+  // message for whoever opened it.
+  var message = 'The viewer failed to start: ' + cause;
+  window.__spineViewerError = message;
+  var status = document.getElementById('viewer-status');
+  if (status) {
+    status.textContent = message;
+    status.className = 'status failed';
+  }
+});
+</script>
 </body>
 </html>
 `;

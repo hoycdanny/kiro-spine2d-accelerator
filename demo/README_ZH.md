@@ -42,7 +42,7 @@ demo/out/preview/hero.html  直接雙擊：動畫會在任何瀏覽器裡播放�
 | 7. 故意弄壞 | 4/4 畫格 FAIL，附像素數與 diff 圖 | 「我把一個 atlas 區域移了三像素。骨架資料完全沒變 —— 只有視覺檢查抓得到。」 |
 | 8. Unity scaffold | `hero.atlas → hero.atlas.txt`、mix 表、控制腳本 | 「spine-unity 載不了純 `.atlas`。這條規則寫在工具裡，不是靠某個人記得。」 |
 | 9. 授權邊界 | `CAPABILITY_DENIED`，附完整命令列 | 「在 trial 上它會拒絕 —— 並把原本要執行的命令交給你，買了授權後原封不動重跑就行。」 |
-| 10. 可以直接交給客戶的一個檔案 | `demo/out/preview/hero.html`，約 236 KB | 「雙擊打開就好。runtime、骨架、atlas、圖片全部包在這一個檔案裡 —— 不用伺服器、不用安裝、不會向外抓任何東西。可以拉時間軸。要注意它內嵌了 Spine Runtimes，所以把檔案交給別人需要你自己的 Spine 授權。」 |
+| 10. 可以直接交給客戶的一個檔案 | `demo/out/preview/hero.html` —— 檔案大小由這一步直接印出來 | 「雙擊打開就好。runtime、骨架、atlas、圖片全部包在這一個檔案裡 —— 不用伺服器、不用安裝、不會向外抓任何東西。可以拉時間軸。要注意它內嵌了 Spine Runtimes，所以把檔案交給別人需要你自己的 Spine 授權。」 |
 
 ## 改成現場即時演示
 

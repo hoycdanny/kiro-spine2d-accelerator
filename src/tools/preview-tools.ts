@@ -316,6 +316,9 @@ export interface ExportInteractivePreviewRequest {
  *
  * No browser is involved: this only reads the runtime bundle and the
  * exported data, so it works on a machine where Chromium is absent. The
+ * write is confined to the workspace but is otherwise unconditional: an
+ * existing file at `output` is replaced, and the extension is not checked.
+ * The
  * HTML itself is never returned in the payload — it is hundreds of
  * kilobytes, and the result envelope inlines detail up to
  * `MAX_INLINE_DETAIL_CHARS`.
@@ -526,6 +529,7 @@ export function registerPreviewTools(
         'The spine-webgl runtime, the skeleton JSON, the atlas text and every atlas page image are embedded as data URLs, so the file needs no server, no install and no network — which is what makes it safe to hand to someone who has neither Spine nor this Power.',
         'Needs no browser to produce, so it works where Chromium is absent; it does need the optional spine-webgl dependency, because that bundle is what gets embedded.',
         'Get the paths wrong and you ship a page that silently renders nothing: the atlas page images are read from beside the .atlas unless `imageDir` says otherwise, and a missing one fails here rather than in the client\'s browser.',
+        'It replaces whatever file already sits at `output`, with no extension check and no backup, so `output: "src/host.ts"` would overwrite that source file — pass a path you are willing to lose.',
         `Distributing the generated file requires your own Spine license: ${PURCHASE_URL}`,
       ].join(' '),
       inputSchema: {
@@ -533,7 +537,9 @@ export function registerPreviewTools(
         atlas: z.string().describe('Path to the matching .atlas file.'),
         output: z
           .string()
-          .describe('Path of the HTML file to write, inside the workspace, e.g. "preview/hero.html".'),
+          .describe(
+            'Path of the HTML file to write, inside the workspace, e.g. "preview/hero.html". An existing file at this path is overwritten.',
+          ),
         imageDir: z
           .string()
           .optional()
