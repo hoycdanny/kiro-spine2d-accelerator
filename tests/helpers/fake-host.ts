@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 
+import { byCodeUnit } from '../../src/canonical-json';
 import { SpineHost } from '../../src/host';
 
 const TRIAL_LOG = [
@@ -15,6 +16,15 @@ const LICENSED_LOG = [
   'Starting: Spine 4.2.37',
   'Started.',
 ].join('\n');
+
+/**
+ * Split a path into non-empty segments on either separator.
+ *
+ * Deliberately not `node:path.dirname`: this fake's keys are Windows paths
+ * (`C:\work\project\...`) while its `platform` is a constructor option, so
+ * `dirname` on a POSIX test runner would not split on a backslash.
+ */
+const segments = (p: string): string[] => p.split(/[\\/]/).filter((s) => s.length > 0);
 
 export const TRIAL_EXECUTABLE = 'C:\\Program Files\\Spine Trial\\SpineTrial.com';
 export const LICENSED_EXECUTABLE = 'C:\\Program Files\\Spine\\Spine.com';
@@ -69,6 +79,18 @@ export function createFakeHost(options: {
       files[p] = content;
       paths.add(p);
       host.writes[p] = content;
+    },
+    listDir: (dir: string) => {
+      const want = segments(dir);
+      const out = new Set<string>();
+      for (const key of [...Object.keys(files), ...Object.keys(binaries)]) {
+        const parts = segments(key);
+        if (parts.length !== want.length + 1) continue;
+        if (want.every((segment, index) => parts[index] === segment)) {
+          out.add(parts[parts.length - 1] as string);
+        }
+      }
+      return [...out].sort(byCodeUnit);
     },
     readBinary: (p: string) => binaries[p] ?? null,
     writeBinary: (p: string, data: Buffer) => {

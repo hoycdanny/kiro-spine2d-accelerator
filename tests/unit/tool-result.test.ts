@@ -1,8 +1,10 @@
 import {
   MAX_INLINE_DETAIL_CHARS,
+  MAX_NAMED_ITEMS,
   fromException,
   guardTool,
   jsonBlock,
+  nameList,
   toToolResult,
 } from '../../src/tool-result';
 import { SpineErrorCode, err, ok } from '../../src/types';
@@ -87,5 +89,27 @@ describe('guardTool', () => {
 describe('jsonBlock', () => {
   it('pretty-prints with two-space indentation', () => {
     expect(jsonBlock({ a: 1 })).toBe('{\n  "a": 1\n}');
+  });
+});
+
+describe('nameList', () => {
+  it('spells out every name up to the cap', () => {
+    expect(nameList([])).toBe('');
+    expect(nameList(['head.png', 'torso.png'])).toBe('head.png, torso.png');
+    expect(nameList(['a', 'b', 'c', 'd', 'e'])).toBe('a, b, c, d, e');
+  });
+
+  it('caps the inline names and counts the remainder', () => {
+    // This is what keeps a summary inside the inline budget no matter how
+    // many files a folder holds.
+    expect(nameList(['a', 'b', 'c', 'd', 'e', 'f', 'g'])).toBe(
+      'a, b, c, d, e and 2 more',
+    );
+    expect(MAX_NAMED_ITEMS).toBe(5);
+  });
+
+  it('stays well inside the inline detail budget for a huge list', () => {
+    const names = Array.from({ length: 500 }, (_, index) => `image-${index}.png`);
+    expect(nameList(names).length).toBeLessThan(MAX_INLINE_DETAIL_CHARS);
   });
 });

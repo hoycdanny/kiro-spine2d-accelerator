@@ -1,6 +1,7 @@
 import {
   BaselineManifest,
   DEFAULT_THRESHOLDS,
+  changedPixelMask,
   checkManifest,
   compareImages,
   explainMismatch,
@@ -112,6 +113,78 @@ describe('compareImages', () => {
       maxDifferentFraction: 0,
     });
     expect(comparison.differentPixels).toBe(1);
+  });
+});
+
+describe('changedPixelMask', () => {
+  it('marks exactly the pixels beyond the channel tolerance', () => {
+    const changed = withPixel(baseline, 5, [255, 20, 30, 255]);
+    const result = changedPixelMask(baseline, changed, {
+      channelTolerance: 4,
+      maxDifferentFraction: 0,
+    });
+
+    expect(result.width).toBe(10);
+    expect(result.height).toBe(10);
+    expect(result.mask).toHaveLength(100);
+    expect(result.differentPixels).toBe(1);
+    expect(result.maxChannelDelta).toBe(245);
+    expect(result.mask[5]).toBe(1);
+    expect([...result.mask].filter((flag) => flag === 1)).toHaveLength(1);
+  });
+
+  it('absorbs rasteriser jitter within the tolerance', () => {
+    // Same rule compareImages applies, so a software rasteriser's edge
+    // wobble is not reported as a real change by either of them.
+    const nudged = withPixel(baseline, 5, [13, 20, 30, 255]);
+    const result = changedPixelMask(baseline, nudged, {
+      channelTolerance: 4,
+      maxDifferentFraction: 0,
+    });
+    expect(result.differentPixels).toBe(0);
+    expect(result.maxChannelDelta).toBe(3);
+    expect([...result.mask].some((flag) => flag === 1)).toBe(false);
+  });
+
+  it('counts an alpha-only change', () => {
+    const changed = withPixel(baseline, 7, [10, 20, 30, 0]);
+    const result = changedPixelMask(baseline, changed, {
+      channelTolerance: 4,
+      maxDifferentFraction: 0,
+    });
+    expect(result.differentPixels).toBe(1);
+    expect(result.mask[7]).toBe(1);
+  });
+
+  it('agrees with compareImages on the same pair', () => {
+    let changed = withPixel(baseline, 5, [255, 20, 30, 255]);
+    changed = withPixel(changed, 11, [10, 20, 30, 0]);
+    changed = withPixel(changed, 42, [12, 22, 32, 255]); // within tolerance
+    changed = withPixel(changed, 99, [10, 200, 30, 255]);
+
+    const thresholds = { channelTolerance: 4, maxDifferentFraction: 0 };
+    const mask = changedPixelMask(baseline, changed, thresholds);
+    const comparison = compareImages('frame', baseline, changed, thresholds);
+
+    expect(mask.differentPixels).toBe(comparison.differentPixels);
+    expect(mask.maxChannelDelta).toBe(comparison.maxChannelDelta);
+    expect(mask.differentPixels).toBe(3);
+  });
+
+  it('uses the default thresholds when none are given', () => {
+    // Delta 5 against the baseline's 10, so just past the default tolerance.
+    const changed = withPixel(baseline, 5, [15, 20, 30, 255]);
+    expect(DEFAULT_THRESHOLDS.channelTolerance).toBe(4);
+    expect(changedPixelMask(baseline, changed).differentPixels).toBe(1);
+    expect(changedPixelMask(baseline, baseline).differentPixels).toBe(0);
+  });
+
+  it('throws on a size mismatch instead of reporting one', () => {
+    // Both frames come off one canvas sized once, so differing sizes are a
+    // defect in the probe path rather than an input condition.
+    expect(() =>
+      changedPixelMask(baseline, solidImage(12, 10, [10, 20, 30, 255])),
+    ).toThrow('Frame size changed mid-comparison');
   });
 });
 

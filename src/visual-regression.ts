@@ -133,6 +133,73 @@ export function compareImages(
   };
 }
 
+/** Which pixels moved between two frames, without a diff image. */
+export interface ChangedPixelMask {
+  width: number;
+  height: number;
+  /** One byte per pixel, row-major from the top-left: 1 where it differs. */
+  mask: Uint8Array;
+  differentPixels: number;
+  /** Largest per-channel difference seen. */
+  maxChannelDelta: number;
+}
+
+/**
+ * Mark the pixels that differ between two frames of the same canvas.
+ *
+ * The rule is identical to {@link compareImages}' — the maximum of the four
+ * absolute channel deltas, counted as changed when strictly greater than
+ * `thresholds.channelTolerance` — so there is one definition of "different"
+ * in the repo and a software rasteriser's edge jitter is not mistaken for a
+ * real change.
+ *
+ * Unlike `compareImages` this **throws** on a size mismatch instead of
+ * reporting one. Every frame it compares comes off one canvas that was
+ * sized once, so differing sizes are a defect in the caller, not an input
+ * condition worth a result field; `guardTool` turns the throw into a
+ * `CLI_FAILED` envelope.
+ */
+export function changedPixelMask(
+  baseline: RgbaImage,
+  actual: RgbaImage,
+  thresholds: RegressionThresholds = DEFAULT_THRESHOLDS,
+): ChangedPixelMask {
+  if (baseline.width !== actual.width || baseline.height !== actual.height) {
+    throw new Error(
+      `Frame size changed mid-comparison: ${baseline.width}x${baseline.height} then ${actual.width}x${actual.height}. ` +
+        'Both frames must come from the same canvas at the same size.',
+    );
+  }
+
+  const mask = new Uint8Array(baseline.width * baseline.height);
+  let differentPixels = 0;
+  let maxChannelDelta = 0;
+
+  for (let i = 0; i < baseline.data.length; i += 4) {
+    let pixelDelta = 0;
+    for (let channel = 0; channel < 4; channel++) {
+      const delta = Math.abs(
+        (baseline.data[i + channel] ?? 0) - (actual.data[i + channel] ?? 0),
+      );
+      if (delta > pixelDelta) pixelDelta = delta;
+    }
+    if (pixelDelta > maxChannelDelta) maxChannelDelta = pixelDelta;
+
+    if (pixelDelta > thresholds.channelTolerance) {
+      mask[i / 4] = 1;
+      differentPixels += 1;
+    }
+  }
+
+  return {
+    width: baseline.width,
+    height: baseline.height,
+    mask,
+    differentPixels,
+    maxChannelDelta,
+  };
+}
+
 /** Manifest stored alongside a baseline set. */
 export interface BaselineManifest {
   /** Schema version of this manifest. */

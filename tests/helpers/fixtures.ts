@@ -371,3 +371,295 @@ export const RENDERABLE_ATLAS = [
   'bounds: 0, 0, 64, 64',
   '',
 ].join('\n');
+
+/**
+ * A skeleton with a genuinely loopable animation.
+ *
+ * Needed because no other fixture has one: the loopability heuristic
+ * compares each timeline's first and last keyframe values, and
+ * `RICH_SKELETON.walk` and `.idle` both disagree, while `LEAN_SKELETON.idle`
+ * only qualifies through the degenerate single-keyframe rule. `breathe`
+ * returns both of its timelines to their starting values at t = 2.
+ */
+export const LOOPABLE_SKELETON = {
+  skeleton: {
+    hash: 'loopablehash',
+    spine: '4.2.37',
+    x: -16,
+    y: 0,
+    width: 32,
+    height: 124,
+  },
+  bones: [
+    { name: 'root' },
+    { name: 'hip', parent: 'root', y: 64 },
+    { name: 'torso', parent: 'hip', length: 60 },
+  ],
+  slots: [{ name: 'torso', bone: 'torso', attachment: 'torso' }],
+  skins: [
+    {
+      name: 'default',
+      attachments: { torso: { torso: { x: 0, y: 30, width: 32, height: 60 } } },
+    },
+  ],
+  animations: {
+    breathe: {
+      bones: {
+        torso: {
+          rotate: [
+            { time: 0, value: 0 },
+            { time: 1, value: 2 },
+            { time: 2, value: 0 },
+          ],
+          translate: [
+            { time: 0, x: 0, y: 0 },
+            { time: 1, x: 0, y: 1.5 },
+            { time: 2, x: 0, y: 0 },
+          ],
+        },
+      },
+    },
+  },
+};
+
+/**
+ * The full canonical hierarchy from `python/src/spine_psd/conventions.py`:
+ * `root -> hip -> torso -> chest -> neck -> head`, arms off `chest` through
+ * the `shoulder_*` bones, legs off `hip`.
+ *
+ * Every bone rotation is zero and every joint is placed with plain parent
+ * relative offsets, so a rotation keyframe on a limb pivots about that
+ * limb's joint and nothing else — which is what makes it a usable target
+ * for the animation templates.
+ *
+ * Every attachment sits on a declared slot and every region it names is in
+ * {@link CANONICAL_RIG_ATLAS}, so the real runtime can load it and reach a
+ * draw call. Hand-generated; nothing here comes from a Spine install.
+ */
+export const CANONICAL_RIG = {
+  skeleton: {
+    hash: 'canonicalrig',
+    spine: '4.2.37',
+    x: -32,
+    y: -14,
+    width: 64,
+    height: 236,
+    images: './images/',
+  },
+  bones: [
+    { name: 'root' },
+    { name: 'hip', parent: 'root', x: 0, y: 70 },
+    { name: 'torso', parent: 'hip', length: 48 },
+    { name: 'chest', parent: 'torso', y: 48, length: 40 },
+    { name: 'neck', parent: 'chest', y: 40, length: 16 },
+    { name: 'head', parent: 'neck', y: 16, length: 48 },
+    { name: 'shoulder_left', parent: 'chest', x: 14, y: 34, length: 8 },
+    { name: 'arm_left', parent: 'shoulder_left', x: 8, length: 40 },
+    { name: 'forearm_left', parent: 'arm_left', y: -40, length: 36 },
+    { name: 'hand_left', parent: 'forearm_left', y: -36, length: 16 },
+    { name: 'shoulder_right', parent: 'chest', x: -14, y: 34, length: 8 },
+    { name: 'arm_right', parent: 'shoulder_right', x: -8, length: 40 },
+    { name: 'forearm_right', parent: 'arm_right', y: -40, length: 36 },
+    { name: 'hand_right', parent: 'forearm_right', y: -36, length: 16 },
+    { name: 'thigh_left', parent: 'hip', x: 10, length: 44 },
+    { name: 'shin_left', parent: 'thigh_left', y: -44, length: 40 },
+    { name: 'thigh_right', parent: 'hip', x: -10, length: 44 },
+    { name: 'shin_right', parent: 'thigh_right', y: -44, length: 40 },
+  ],
+  // Declaration order is draw order: the rig's right side sits behind the
+  // torso, its left side in front, so a limb sweep is readable in a render.
+  slots: [
+    { name: 'shin_right', bone: 'shin_right', attachment: 'shin_right' },
+    { name: 'thigh_right', bone: 'thigh_right', attachment: 'thigh_right' },
+    { name: 'hand_right', bone: 'hand_right', attachment: 'hand_right' },
+    { name: 'forearm_right', bone: 'forearm_right', attachment: 'forearm_right' },
+    { name: 'arm_right', bone: 'arm_right', attachment: 'arm_right' },
+    { name: 'shin_left', bone: 'shin_left', attachment: 'shin_left' },
+    { name: 'thigh_left', bone: 'thigh_left', attachment: 'thigh_left' },
+    { name: 'torso', bone: 'torso', attachment: 'torso' },
+    { name: 'chest', bone: 'chest', attachment: 'chest' },
+    { name: 'neck', bone: 'neck', attachment: 'neck' },
+    { name: 'head', bone: 'head', attachment: 'head' },
+    { name: 'arm_left', bone: 'arm_left', attachment: 'arm_left' },
+    { name: 'forearm_left', bone: 'forearm_left', attachment: 'forearm_left' },
+    { name: 'hand_left', bone: 'hand_left', attachment: 'hand_left' },
+  ],
+  skins: [
+    {
+      name: 'default',
+      attachments: {
+        shin_right: { shin_right: { x: 0, y: -20, width: 18, height: 40 } },
+        thigh_right: { thigh_right: { x: 0, y: -22, width: 20, height: 44 } },
+        hand_right: { hand_right: { x: 0, y: -8, width: 16, height: 16 } },
+        forearm_right: { forearm_right: { x: 0, y: -18, width: 14, height: 36 } },
+        arm_right: { arm_right: { x: 0, y: -20, width: 16, height: 40 } },
+        shin_left: { shin_left: { x: 0, y: -20, width: 18, height: 40 } },
+        thigh_left: { thigh_left: { x: 0, y: -22, width: 20, height: 44 } },
+        torso: { torso: { x: 0, y: 24, width: 44, height: 48 } },
+        chest: { chest: { x: 0, y: 20, width: 40, height: 40 } },
+        neck: { neck: { x: 0, y: 8, width: 16, height: 16 } },
+        head: { head: { x: 0, y: 24, width: 48, height: 48 } },
+        arm_left: { arm_left: { x: 0, y: -20, width: 16, height: 40 } },
+        forearm_left: { forearm_left: { x: 0, y: -18, width: 14, height: 36 } },
+        hand_left: { hand_left: { x: 0, y: -8, width: 16, height: 16 } },
+      },
+    },
+  ],
+  // An empty `setup` plus a minimal `idle`, which is what the PSD generator
+  // produces: enough for a test to prove existing animations survive.
+  animations: {
+    setup: {},
+    idle: {
+      bones: {
+        torso: {
+          rotate: [
+            { time: 0, value: 0 },
+            { time: 1, value: 1 },
+            { time: 2, value: 0 },
+          ],
+        },
+      },
+    },
+  },
+};
+
+/** The atlas that pairs with {@link CANONICAL_RIG}; one page, no padding overlap. */
+export const CANONICAL_RIG_ATLAS = [
+  'canonical.png',
+  'size: 512, 256',
+  'format: RGBA8888',
+  'filter: Linear, Linear',
+  'repeat: none',
+  'pma: false',
+  'head',
+  'bounds: 2, 2, 48, 48',
+  'chest',
+  'bounds: 54, 2, 40, 40',
+  'torso',
+  'bounds: 98, 2, 44, 48',
+  'neck',
+  'bounds: 146, 2, 16, 16',
+  'arm_left',
+  'bounds: 166, 2, 16, 40',
+  'arm_right',
+  'bounds: 186, 2, 16, 40',
+  'forearm_left',
+  'bounds: 206, 2, 14, 36',
+  'forearm_right',
+  'bounds: 224, 2, 14, 36',
+  'hand_left',
+  'bounds: 242, 2, 16, 16',
+  'hand_right',
+  'bounds: 262, 2, 16, 16',
+  'thigh_left',
+  'bounds: 282, 2, 20, 44',
+  'thigh_right',
+  'bounds: 306, 2, 20, 44',
+  'shin_left',
+  'bounds: 330, 2, 18, 40',
+  'shin_right',
+  'bounds: 352, 2, 18, 40',
+  '',
+].join('\n');
+
+/**
+ * A renderable skeleton that exercises the probe layer's warning path.
+ *
+ * `RICH_SKELETON` cannot do this job: the pinned reader throws
+ * `Couldn't find slot <name> for skin <skin>` for any skin attachment key
+ * that is not a declared slot, and `RICH_SKELETON` declares attachments
+ * under `path-slot`, `muzzle` and `clip` while its slots are only
+ * `leg-left`, `torso`, `head`, `glow`, `shadow` and `hitbox`. It therefore
+ * never reaches a draw call in the real runtime and exercises the warning
+ * path through a stub launcher only.
+ *
+ * Here every attachment is on a declared slot. The non-drawable kinds are
+ * exactly three — `point`, `boundingbox`, `clipping` — and no `path`
+ * attachment is declared, so a real-page probe run produces exactly three
+ * warnings.
+ *
+ * `crest` is deliberately a small 16x16 box at `y: 96` on the same bone as
+ * `body`: off-centre and vertically compact, so a mirrored box lands in the
+ * other half of the canvas and a missing Y-flip fails loudly instead of
+ * producing a plausible document with the wrong slot names in it.
+ */
+export const PROBE_WARNING_SKELETON = {
+  skeleton: {
+    hash: 'probewarning',
+    spine: '4.2.37',
+    x: -32,
+    y: -4,
+    width: 64,
+    height: 112,
+    images: './images/',
+  },
+  bones: [
+    { name: 'root' },
+    { name: 'body', parent: 'root', length: 64 },
+  ],
+  slots: [
+    { name: 'body', bone: 'body', attachment: 'body' },
+    { name: 'crest', bone: 'body', attachment: 'crest' },
+    // These three carry a setup-pose attachment on purpose. The probe page
+    // names a skipped kind only for a slot whose attachment is actually
+    // set, so leaving them null would produce no warnings at all.
+    { name: 'muzzle', bone: 'body', attachment: 'muzzle' },
+    { name: 'hitbox', bone: 'body', attachment: 'hitbox' },
+    { name: 'clip', bone: 'body', attachment: 'clip' },
+  ],
+  skins: [
+    {
+      name: 'default',
+      attachments: {
+        body: { body: { x: 0, y: 32, width: 64, height: 64 } },
+        crest: { crest: { x: 0, y: 96, width: 16, height: 16 } },
+        muzzle: { muzzle: { type: 'point', x: 8, y: 40, rotation: 0 } },
+        hitbox: {
+          hitbox: {
+            type: 'boundingbox',
+            vertexCount: 4,
+            vertices: [-16, 0, 16, 0, 16, 64, -16, 64],
+          },
+        },
+        // `end` names a slot drawn *before* this one, so the clipper closes
+        // immediately and clips nothing away: the warning is the point, not
+        // a hole in the render.
+        clip: {
+          clip: {
+            type: 'clipping',
+            end: 'crest',
+            vertexCount: 4,
+            vertices: [-32, 0, 32, 0, 32, 112, -32, 112],
+          },
+        },
+      },
+    },
+  ],
+  animations: {
+    bob: {
+      bones: {
+        body: {
+          rotate: [
+            { time: 0, value: 0 },
+            { time: 0.5, value: 6 },
+          ],
+        },
+      },
+    },
+  },
+};
+
+/** The atlas that pairs with {@link PROBE_WARNING_SKELETON}. */
+export const PROBE_WARNING_ATLAS = [
+  'probe.png',
+  'size: 128, 128',
+  'format: RGBA8888',
+  'filter: Linear, Linear',
+  'repeat: none',
+  'pma: false',
+  'body',
+  'bounds: 0, 0, 64, 64',
+  'crest',
+  'bounds: 66, 0, 16, 16',
+  '',
+].join('\n');

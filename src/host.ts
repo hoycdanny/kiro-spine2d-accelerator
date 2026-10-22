@@ -4,7 +4,7 @@
 // arguments, which keeps the logic modules pure and testable.
 // ============================================================
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { homedir, platform } from 'node:os';
 import { dirname, resolve } from 'node:path';
 
@@ -34,6 +34,8 @@ export interface SpineHost {
    * which confines writes to the workspace root.
    */
   writeText: (path: string, content: string) => void;
+  /** Names (not paths) of the entries in a directory. Empty when unreadable. */
+  listDir: (path: string) => string[];
   /** Read a binary file (atlas page images), or null when unreadable. */
   readBinary: (path: string) => Buffer | null;
   /** Write a binary file (rendered screenshots), creating directories. */
@@ -63,6 +65,16 @@ export function createNodeHost(overrides: Partial<SpineHost> = {}): SpineHost {
     writeText: (path: string, content: string) => {
       mkdirSync(dirname(path), { recursive: true });
       writeFileSync(path, content, 'utf8');
+    },
+    // An unreadable directory answers with an empty list rather than
+    // throwing: a caller asking "what else is in the output folder?" about
+    // a folder that does not exist yet has its answer, and it is "nothing".
+    listDir: (path: string) => {
+      try {
+        return readdirSync(path);
+      } catch {
+        return [];
+      }
     },
     readBinary: (path: string) => {
       try {

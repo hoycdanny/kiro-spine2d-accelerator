@@ -1,5 +1,7 @@
+import { createNodeHost } from '../../src/host';
 import { isInside, resolveReadTarget, resolveWriteTarget } from '../../src/path-safety';
 import { SpineErrorCode } from '../../src/types';
+import { createFakeHost } from '../helpers/fake-host';
 
 const root = process.platform === 'win32' ? 'C:\\work\\project' : '/work/project';
 const join = (...parts: string[]) =>
@@ -76,5 +78,33 @@ describe('resolveReadTarget', () => {
   it('refuses an empty input', () => {
     const result = resolveReadTarget('', root, () => true);
     expect(!result.ok && result.code).toBe(SpineErrorCode.InvalidArgument);
+  });
+});
+
+describe('host.listDir', () => {
+  it('answers with an empty list for a directory it cannot read', () => {
+    // A caller asking what else is in an output folder that does not exist
+    // yet has its answer, and it is "nothing" rather than a failure.
+    const host = createNodeHost({ workspaceRoot: root });
+    expect(host.listDir(join(root, 'no', 'such', 'folder'))).toEqual([]);
+  });
+
+  it('lists only the immediate entries, independently of the separator', () => {
+    const host = createFakeHost({
+      edition: 'none',
+      files: {
+        'C:\\work\\project\\out\\hero.spine-doc.json': '{}',
+        'C:\\work\\project\\out\\hero.spine-doc.md': '# hero',
+        'C:\\work\\project\\out\\nested\\deep.json': '{}',
+        'C:\\work\\project\\other.json': '{}',
+      },
+      binaries: { 'C:\\work\\project\\out\\hero.png': Buffer.alloc(4) },
+    });
+
+    const expected = ['hero.png', 'hero.spine-doc.json', 'hero.spine-doc.md'];
+    expect(host.listDir('C:\\work\\project\\out')).toEqual(expected);
+    expect(host.listDir('C:/work/project/out')).toEqual(expected);
+    expect(host.listDir('C:\\work\\project\\out\\nested')).toEqual(['deep.json']);
+    expect(host.listDir('C:\\work\\project\\missing')).toEqual([]);
   });
 });

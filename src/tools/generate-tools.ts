@@ -33,7 +33,7 @@ import { LintReport, lintSkeleton, summarizeLint } from '../lint-rules';
 import { resolveReadTarget, resolveWriteTarget } from '../path-safety';
 import { SidecarRunner, callSidecar, createUvSidecarRunner } from '../sidecar';
 import { SkeletonReport, inspectSkeletonJson } from '../skeleton-data';
-import { guardTool } from '../tool-result';
+import { guardTool, nameList } from '../tool-result';
 import { SpineResult, ok } from '../types';
 import { readTextFile } from './data-tools';
 
@@ -74,20 +74,6 @@ export interface PsdToSkeletonResult {
    * empty when `emitLooseImages` is off.
    */
   foreignImagesKept?: string[];
-}
-
-/**
- * How many file names a summary line spells out. The full lists travel in
- * structuredContent, so the summary stays well inside the inline budget in
- * tool-result.ts no matter how many files a folder holds.
- */
-const MAX_NAMED_IMAGES = 5;
-
-/** A few names inline, the remainder as a count. */
-function nameList(names: string[]): string {
-  const shown = names.slice(0, MAX_NAMED_IMAGES).join(', ');
-  const extra = names.length - MAX_NAMED_IMAGES;
-  return extra > 0 ? `${shown} and ${extra} more` : shown;
 }
 
 /** Payload returned by `psd_to_skeleton`. */

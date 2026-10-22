@@ -27,6 +27,25 @@ export interface ToolResultPayload {
  */
 export const MAX_INLINE_DETAIL_CHARS = 1200;
 
+/**
+ * How many names a summary line spells out before falling back to a count.
+ * The full lists travel in `structuredContent`, so a summary stays well
+ * inside {@link MAX_INLINE_DETAIL_CHARS} no matter how many items there are.
+ *
+ * This and {@link nameList} live here, next to the budget they protect,
+ * because more than one tool group needs them. Hoisting them out of
+ * `tools/generate-tools.ts` was a deliberate tidy-up rather than something
+ * a requirement asked for; the value is unchanged, so no message moved.
+ */
+export const MAX_NAMED_ITEMS = 5;
+
+/** A few names inline, the remainder as a count. */
+export function nameList(names: string[]): string {
+  const shown = names.slice(0, MAX_NAMED_ITEMS).join(', ');
+  const extra = names.length - MAX_NAMED_ITEMS;
+  return extra > 0 ? `${shown} and ${extra} more` : shown;
+}
+
 /** Render a value as a stable, readable JSON block. */
 export function jsonBlock(value: unknown): string {
   return JSON.stringify(value, null, 2);
