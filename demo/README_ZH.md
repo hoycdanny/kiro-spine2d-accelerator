@@ -34,7 +34,7 @@ demo/out/preview/hero.html  直接雙擊：動畫會在任何瀏覽器裡播放�
 | 步驟 | 畫面上出現什麼 | 可以直接講的那句話 |
 |---|---|---|
 | 1. 環境探測 | 偵測到 trial、7 項操作被封鎖、Python sidecar 就緒 | 「它會在你浪費時間之前，先告訴你哪些事做不到。」 |
-| 2. PSD → 骨架 | 12 根骨骼、6 個 attachment、6 根虛擬骨骼、`cape` 被跳過，另外產出含 6 張散圖 PNG 的 `generated/images/` 資料夾 | 「素材進、骨架出 —— 而且全程沒開 Spine 編輯器，這就是這段在 trial 上也能用的原因。JSON 旁邊那個 `images/` 資料夾才是讓 `File -> Import Data` 能成功的關鍵：編輯器是對著這些散圖解析 attachment，不是讀 atlas。」 |
+| 2. PSD → 骨架 | 20 根骨骼、16 個 attachment、4 根虛擬骨骼（`root`、`neck`、`shoulder_left`、`shoulder_right`）、`cape` 被跳過，另外產出含 16 張散圖 PNG 的 `generated/images/` 資料夾 | 「素材進、骨架出 —— 而且全程沒開 Spine 編輯器，這就是這段在 trial 上也能用的原因。JSON 旁邊那個 `images/` 資料夾才是讓 `File -> Import Data` 能成功的關鍵：編輯器是對著這些散圖解析 attachment，不是讀 atlas。」 |
 | 3. 檢視 + 稽核 | atlas 交叉檢查通過、兩個附修正建議的警告 | 「交叉檢查才是關鍵：骨架需要但 atlas 沒有的區域，在 runtime 會畫出『空的』，而且任何地方都不會報錯。」 |
 | 4. 動畫師加動作 | `+ animations: idle, wave` | 「匯出 JSON 的文字 diff 根本看不懂。這個回答的是審查者真正想問的問題。」 |
 | 5. 渲染 | 240×240 四張畫格、回報像素覆蓋率 | 「用真正的 Spine web runtime、無頭渲染。覆蓋率的意義是：『它靜悄悄什麼都沒畫』這件事能被偵測到。」 |
@@ -68,8 +68,9 @@ Power 裝進 Kiro 後，用這些自然語言指令可以走出同一條路徑�
 
 ## 誠實交代（主動講，不要等人問）
 
-- **範例素材是色塊**，由 `make-sample-psd.py` 生成。它要展示的是綁定規則
-  （關節樞紐、虛擬骨骼、繪製順序），不是美術品質。
+- **範例角色是程式畫出來的**：每個形狀、外框和陰影都來自 `make-sample-psd.py` 裡的座標，
+  沒有任何外部美術資產，也沒有描摹任何人的作品。它要展示的是綁定規則
+  （關節樞紐、虛擬骨骼、繪製順序），不是美術風格。
 - **export、pack、import 需要購買授權。** 第 9 步就是刻意展示這條邊界。
   demo 其他部分在 trial 上都能跑。
 - **渲染畫格來自 Spine web runtime**，不是 Spine 自己的圖片匯出。
