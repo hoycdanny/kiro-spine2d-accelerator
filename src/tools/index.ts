@@ -22,6 +22,7 @@ import { registerGenerateTools } from './generate-tools';
 import { registerPreviewTools } from './preview-tools';
 import { registerRegressionTools } from './regression-tools';
 import { registerDocTools } from './doc-tools';
+import { registerAnimateTools } from './animate-tools';
 import { registerScaffoldTools } from './scaffold-tools';
 
 /** Collaborators the tool layer needs, all injectable for tests. */
@@ -54,6 +55,7 @@ export function registerAllTools(
 
   // Group C — generation
   registerGenerateTools(server, host, sidecar);
+  registerAnimateTools(server, host);
 
   // Group D — verification
   registerPreviewTools(server, host, launcher);
@@ -76,5 +78,6 @@ export {
   registerPreviewTools,
   registerRegressionTools,
   registerDocTools,
+  registerAnimateTools,
   registerScaffoldTools,
 };

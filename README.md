@@ -112,6 +112,7 @@ authenticate.
 | Tool | What it does |
 |---|---|
 | `psd_to_skeleton` | Layered PSD to skeleton JSON + atlas + page image, then inspect and lint it |
+| `skeleton_animate` | Generate `idle`, `walk`, `wave`, `jump` or `turn_head` into an exported rig, writing a second JSON file. A rig missing a required bone fails with the bones it does have rather than substituting one. This is mechanically plausible placeholder motion, not artist quality — linear keyframes, no curve shaping, no secondary motion, no weight shift, no foot locking. Open it in the Spine editor to refine it |
 | `render_preview` | Render animation frames with spine-ts in headless Chromium |
 | `visual_regression` | Compare against baselines, write diffs, gate on failure |
 | `preview_export_html` | One self-contained HTML file that plays the skeleton in any browser, with play/pause, a timeline scrub, an animation selector, speed and debug bones. Runtime, skeleton, atlas and page images embedded — no server, nothing fetched. Distributing it needs your own Spine license |

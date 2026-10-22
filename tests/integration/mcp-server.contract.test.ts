@@ -97,6 +97,7 @@ const EXPECTED_TOOLS = [
   'pack_settings_build',
   // C — generation
   'psd_to_skeleton',
+  'skeleton_animate',
   // D — verification
   'render_preview',
   'preview_export_html',
@@ -367,6 +368,27 @@ describe('spine-mcp server contract', () => {
     it('registers no resources, so the tool result is the whole answer', async () => {
       const client = await connect(documentHost());
       await expect(client.listResources()).rejects.toThrow();
+      await client.close();
+    });
+  });
+
+  describe('skeleton_animate', () => {
+    it('declares the surface the Power documents', async () => {
+      const client = await connect(createFakeHost());
+      const { tools } = await client.listTools();
+      const tool = tools.find((entry) => entry.name === 'skeleton_animate')!;
+
+      expect(tool.description!.length).toBeGreaterThanOrEqual(80);
+      expect(tool.inputSchema.type).toBe('object');
+      expect(tool.annotations?.destructiveHint).toBe(false);
+      expect(tool.annotations?.readOnlyHint).toBe(false);
+
+      // Generating animations writes a new file; it never rewrites one in
+      // place, so the destructive set does not grow.
+      const destructive = tools
+        .filter((entry) => entry.annotations?.destructiveHint === true)
+        .map((entry) => entry.name);
+      expect(destructive).toEqual(['spine_cleanup']);
       await client.close();
     });
   });
