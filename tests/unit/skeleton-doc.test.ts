@@ -7,6 +7,7 @@
  * document's four sections must work with Chromium absent, so they are
  * tested with the influence section explicitly unavailable.
  */
+import { CHROMIUM_LAUNCH_ARGS } from '../../src/preview-renderer';
 import {
   AnimationDoc,
   BoneDoc,
@@ -44,7 +45,7 @@ const PROBE_OFF: InfluenceDoc = {
   thresholds: { channelTolerance: 4, slightFraction: 0.005, moderateFraction: 0.05 },
   probesPlanned: 0,
   probesPerformed: 0,
-  environment: { launchArgs: ['--hide-scrollbars', '--mute-audio'], useGl: null },
+  environment: { launchArgs: [...CHROMIUM_LAUNCH_ARGS], useGl: null },
   framing: null,
   warnings: [],
   bones: [],

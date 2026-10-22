@@ -30,6 +30,7 @@ import { resolveReadTarget, resolveWriteTarget } from '../path-safety';
 import { RgbaImage, decodePng } from '../png';
 import {
   BrowserLauncher,
+  CHROMIUM_LAUNCH_ARGS,
   ProbeFrame,
   createPlaywrightLauncher,
   renderProbes,
@@ -55,8 +56,12 @@ import { SpineErrorCode, SpineResult, err, ok } from '../types';
 import { loadAtlasImages } from './preview-tools';
 import { readTextFile } from './data-tools';
 
-/** Launch args the probe browser uses, recorded in every document. */
-const PROBE_LAUNCH_ARGS = ['--hide-scrollbars', '--mute-audio'];
+/**
+ * Launch args the probe browser uses, recorded in every document. Read
+ * from the launcher's own constant so the document cannot drift away from
+ * the environment the probes actually ran in.
+ */
+const PROBE_LAUNCH_ARGS = [...CHROMIUM_LAUNCH_ARGS];
 
 /** Suffix every file this tool writes shares. */
 const DOC_SUFFIX = '.spine-doc.';

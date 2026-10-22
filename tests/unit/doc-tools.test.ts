@@ -9,7 +9,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { BrowserLauncher, RUNTIME_RELATIVE_PATH } from '../../src/preview-renderer';
+import {
+  BrowserLauncher,
+  CHROMIUM_LAUNCH_ARGS,
+  RUNTIME_RELATIVE_PATH,
+} from '../../src/preview-renderer';
 import { SkeletonDocument } from '../../src/skeleton-doc';
 import { SlotBox } from '../../src/skeleton-probe';
 import {
@@ -244,6 +248,20 @@ describe('skeleton_document, measured', () => {
       document.influence.probesPlanned + 1,
     );
     expect(document.influence.framing?.padding).toBe(0.15);
+  });
+
+  it('records the launcher\'s own Chromium args as the environment', async () => {
+    const host = docHost();
+    await skeletonDocument(host, probeLauncher(freshCapture()), {
+      skeleton: 'export/hero.json',
+      atlas: 'export/hero.atlas',
+    });
+
+    // AC-8: the document's comparability claim only holds while the
+    // recorded environment is the launcher's array and not a copy of it.
+    const document = writtenDocument(host.writes);
+    expect(document.influence.environment.launchArgs).toEqual([...CHROMIUM_LAUNCH_ARGS]);
+    expect(document.influence.environment.useGl).toBeNull();
   });
 
   it('attributes moved pixels to the slot whose box contains them', async () => {

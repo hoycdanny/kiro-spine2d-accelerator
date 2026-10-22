@@ -73,6 +73,22 @@ interface ChromiumLike {
 /** How a browser is obtained. Injected so tests can run without Chromium. */
 export type BrowserLauncher = () => Promise<BrowserLike>;
 
+/**
+ * The only Chromium arguments this package launches with.
+ *
+ * Deliberately no `--use-gl` override: headless Chromium already renders
+ * WebGL through its software path, which is what keeps screenshots
+ * comparable across machines. Forcing `--use-gl=swiftshader` instead makes
+ * the spine-ts two-colour tint shader fail to compile — verified on
+ * Chromium 151.
+ *
+ * Exported because `skeleton_document` records the launch arguments in
+ * every document it writes as the environment the influence measurement
+ * was made in. That claim is only true while there is one copy of this
+ * array, so read it from here rather than restating it.
+ */
+export const CHROMIUM_LAUNCH_ARGS: readonly string[] = ['--hide-scrollbars', '--mute-audio'];
+
 /** Launch Chromium through playwright-core, with actionable failures. */
 export function createPlaywrightLauncher(): BrowserLauncher {
   return async () => {
@@ -90,12 +106,8 @@ export function createPlaywrightLauncher(): BrowserLauncher {
     try {
       return await chromium.launch({
         headless: true,
-        // Deliberately no --use-gl override: headless Chromium already
-        // renders WebGL through its software path, which is what keeps
-        // screenshots comparable across machines. Forcing
-        // `--use-gl=swiftshader` instead makes the spine-ts two-colour
-        // tint shader fail to compile — verified on Chromium 151.
-        args: ['--hide-scrollbars', '--mute-audio'],
+        // See CHROMIUM_LAUNCH_ARGS for why there is no --use-gl override.
+        args: [...CHROMIUM_LAUNCH_ARGS],
       });
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : String(cause);
