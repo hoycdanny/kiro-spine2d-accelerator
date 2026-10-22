@@ -337,6 +337,41 @@ describe('the demo is wired up', () => {
     }
   });
 
+  it('quotes the same step-2 counts in every README language', () => {
+    // The counts follow from the layer table in make-sample-psd.py and are
+    // hand-written in five files, so adding a part would silently
+    // invalidate all of them — the way the stale 236 KB figure did before
+    // it was removed.
+    const SAMPLE = read('demo', 'make-sample-psd.py');
+    const drawOrder = /DRAW_ORDER: tuple\[str, \.\.\.\] = \(([^)]*)\)/.exec(SAMPLE);
+    expect(drawOrder).not.toBeNull();
+
+    const layers = [...drawOrder![1]!.matchAll(/"([a-z_]+)"/g)].map((match) => match[1]!);
+    // `cape` is the deliberate unrecognised layer: reported, not rigged.
+    const attachments = layers.filter((name) => name !== 'cape').length;
+    const virtualBones = ['root', 'neck', 'shoulder_left', 'shoulder_right'];
+    // One bone per rigged layer, plus the intermediates the PSD omits.
+    const counts = [attachments + virtualBones.length, attachments, virtualBones.length, attachments];
+
+    expect(layers).toContain('cape');
+    expect(counts).toEqual([20, 16, 4, 16]);
+
+    for (const file of ['README.md', 'README_ZH.md', 'README_CN.md', 'README_JP.md', 'README_KR.md']) {
+      const rows = read('demo', file)
+        .split('\n')
+        .filter((line) => /^\|\s*2\./.test(line));
+      expect(rows).toHaveLength(1);
+
+      // Cell 2 of the table row is the counts cell; the digits in it are
+      // the four numbers, in the same order in every translation.
+      const cell = rows[0]!.split('|')[2]!;
+      expect([...cell.matchAll(/\d+/g)].map((match) => Number(match[0]))).toEqual(counts);
+      for (const bone of [...virtualBones, 'cape']) {
+        expect(cell).toContain(bone);
+      }
+    }
+  });
+
   it('narrates the loose images folder in the demo script', () => {
     expect(DEMO).toContain('images');
     expect(DEMO).toContain('Import Data');
