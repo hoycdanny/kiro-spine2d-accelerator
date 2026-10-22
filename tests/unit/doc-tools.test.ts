@@ -285,9 +285,42 @@ describe('skeleton_document, measured', () => {
         changedFraction: 0.0625,
         bucket: 'strong',
         attachments: ['head'],
+        // The `head` slot hangs off the `head` bone, so this is movement.
+        overlapOnly: false,
       },
     ]);
     expect(head.unattributedPixels).toBe(0);
+  });
+
+  it('marks a credited slot the perturbed bone cannot move as overlap only', async () => {
+    // The stub's moved pixels always land inside the `head` slot's box, so
+    // perturbing `leg-left` credits a slot in a disjoint subtree
+    // (hip -> leg-left versus chest -> neck -> head). The number is real —
+    // pixels did change inside that box — but the movement is not the
+    // slot's, and the document has to say which it is.
+    const host = docHost();
+    await skeletonDocument(
+      host,
+      probeLauncher(freshCapture(), { movingBones: ['leg-left'] }),
+      { skeleton: 'export/hero.json', atlas: 'export/hero.atlas' },
+    );
+
+    const document = writtenDocument(host.writes);
+    const leg = document.influence.bones.find((entry) => entry.bone === 'leg-left')!;
+    expect(leg.slots.map((slot) => [slot.slot, slot.overlapOnly])).toEqual([
+      ['head', true],
+    ]);
+    // Flagged, not dropped: the measurement stands, the label changes.
+    expect(leg.slots[0]!.changedPixels).toBe(16);
+
+    const markdown = host.writes[MD] as string;
+    expect(markdown).toContain('`head` → `head` (0.0625) [overlap]');
+    expect(markdown).toContain('**axis-aligned bounding box**');
+    expect(
+      document.notes.some((note) =>
+        note.includes('AXIS-ALIGNED BOUNDING BOX') && note.includes('overlapOnly: true'),
+      ),
+    ).toBe(true);
   });
 
   it('keeps a bone whose render is identical, marked as having no effect', async () => {

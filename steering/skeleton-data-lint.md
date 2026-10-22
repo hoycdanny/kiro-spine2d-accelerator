@@ -141,6 +141,12 @@ Report influence by **bucket** (`none`, `slight`, `moderate`, `strong`) and by r
 The fourth decimal of a changed-pixel fraction depends on the GPU, the driver and the Chromium
 build, so do not treat it as a figure two machines will agree on.
 
+**Read the overlap marks before answering "which bone moves this image".** Credit is by
+axis-aligned bounding box, and a box is larger than the attachment it bounds, so a slot whose box
+overlaps a moving one is credited without having moved. Those entries are marked `[overlap]` in the
+Markdown and `overlapOnly: true` in the JSON, decided structurally from the hierarchy and the
+constraints. Quote the unmarked slots as influenced; name a marked one only as an overlap.
+
 **The `skeleton.hash` trap.** The hash does not detect every change, so the document records its
 own content fingerprint alongside it. The measured example from this repo's own demo output:
 `demo/out/generated/hero.json` and `hero-animated.json` both carry

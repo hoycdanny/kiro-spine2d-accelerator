@@ -632,7 +632,7 @@ export function registerAnimateTools(server: McpServer, host: SpineHost): void {
           .boolean()
           .optional()
           .describe(
-            'Emit the event keyframes a template declares, declaring any missing event in the root events object without overwriting an existing declaration. Defaults to false.',
+            'Emit the event keyframes a template declares, declaring any missing event in the root events object without overwriting an existing declaration. Defaults to false. None of the five templates declares an event today, so this changes nothing for any of them; it is reserved for a template that does.',
           ),
         atlas: z
           .string()

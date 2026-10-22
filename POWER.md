@@ -399,6 +399,13 @@ Stated plainly so they are not mistaken for working features:
   build. Compare buckets and relative ordering across machines, not raw fractions. The derived
   world transforms in the hierarchy section are an affine approximation that omits shear
   composition and reflection, so they locate a bone rather than reproduce the runtime exactly.
+- **Influence is credited by bounding box, so overlap is credited too.** A changed pixel goes to
+  every slot whose axis-aligned bounding box contains it, and a box is larger than the attachment
+  it bounds, more so for a rotated one. A slot that did not itself move is therefore credited when
+  its box overlaps one that did. The document marks those entries `[overlap]` (`overlapOnly` in
+  the JSON) by resolving the hierarchy and the constraints from the data: the perturbed bone is not
+  in that slot's bone subtree and no constraint links the two. Read an unmarked slot as moved and a
+  marked one as overlap.
 - **Generated animations carry no mesh deformation.** `skeleton_animate` writes bone timelines
   only. A weighted mesh still animates correctly, because it follows the bones it is bound to, but
   no `deform` timeline is ever generated, so nothing reshapes a mesh independently of its bones.

@@ -48,13 +48,20 @@ export interface TimelineKeySpec {
 }
 
 /**
- * Every timeline key the Spine 4.2 reader accepts, as data.
+ * Every timeline key **this generator may emit**, as data.
  *
- * Taken from `@esotericsoftware/spine-core@4.2.120/dist/SkeletonJson.js` and
- * cross-read against `spine-runtimes` 4.2 `SkeletonJson.java`. This table is
- * the acceptance spec: a unit test enumerates every key the templates emit
- * and asserts membership here, so adding a key without reviewing the reader
- * fails the build.
+ * Each row was taken from the dispatch in
+ * `@esotericsoftware/spine-core@4.2.120/dist/SkeletonJson.js` and cross-read
+ * against `spine-runtimes` 4.2 `SkeletonJson.java`, so every key here is one
+ * the 4.2 reader accepts. The converse does not hold: the reader's surface is
+ * larger than this table. It also dispatches `position`, `spacing` and `mix`
+ * on path constraints, `inertia`, `strength`, `damping`, `mass`, `wind`,
+ * `gravity`, `mix` and `reset` on physics constraints, and `ik`, `transform`
+ * and `deform`, none of which any template keys. This table is the emit
+ * allow-list: a unit test enumerates every key the templates emit and asserts
+ * membership here, so adding a key without reviewing the reader fails the
+ * build, and a template that keyed a path, physics or deform timeline must
+ * have its owner added here first.
  *
  * Two defaults matter to the emitter. `scale` is read with
  * `readTimeline2(…, "x", "y", 1, 1)` — default **one** — while `rotate` and
@@ -238,6 +245,12 @@ export interface Template {
   /** Absent → that bone's tracks are dropped and the omission is reported. */
   optionalBones: string[];
   tracks: BoneTrack[];
+  /**
+   * Event keyframes the template emits when `emitEvents` is set. All five
+   * shipped templates declare none, so the flag is a no-op for every one
+   * of them; the shape and its validation exist for the first template
+   * that does declare an event.
+   */
   events: TemplateEvent[];
   /** One sentence, copied into the summary and the `_generator` record. */
   note: string;

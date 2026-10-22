@@ -47,9 +47,21 @@ import {
   compareStaleness,
   fingerprintSkeleton,
   renderDocumentMarkdown,
+  resolveConstraintsByBone,
 } from '../skeleton-doc';
-import { SlotBox, attributeChangedPixels, bucketOf, planProbes } from '../skeleton-probe';
-import { parseSkeletonJson, readBones, readSkinsAndAttachments } from '../skeleton-data';
+import {
+  SlotBox,
+  attributeChangedPixels,
+  bucketOf,
+  planProbes,
+  resolveReachableSlots,
+} from '../skeleton-probe';
+import {
+  parseSkeletonJson,
+  readBones,
+  readSkinsAndAttachments,
+  readSlots,
+} from '../skeleton-data';
 import { MAX_INLINE_DETAIL_CHARS, MAX_NAMED_ITEMS, guardTool, nameList } from '../tool-result';
 import { DEFAULT_THRESHOLDS, changedPixelMask } from '../visual-regression';
 import { SpineErrorCode, SpineResult, err, ok } from '../types';
@@ -552,11 +564,22 @@ export async function skeletonDocument(
     } else {
       const totalPixels = probed.data.canvas.width * probed.data.canvas.height;
 
+      // Which slots each bone could move at all, from the hierarchy and
+      // the constraints. Attribution is by axis-aligned bounding box, so a
+      // credited slot is not necessarily a moved one, and the data says
+      // which is which without costing a probe.
+      const reachable = resolveReachableSlots(
+        bones.parents,
+        readSlots(root, new Set(bones.names)).bones,
+        resolveConstraintsByBone(root),
+      );
+
       const boneDocs: InfluenceBoneDoc[] = attributions.map((entry) => {
         const changedFraction = round(
           totalPixels === 0 ? 0 : entry.changedPixels / totalPixels,
           4,
         );
+        const reachableSlots = reachable.get(entry.bone);
         const slots: InfluenceSlotDoc[] = entry.perSlot
           .slice(0, MAX_INFLUENCED_SLOTS)
           .map((slot) => {
@@ -570,6 +593,9 @@ export async function skeletonDocument(
               changedFraction: fraction,
               bucket: bucketOf(fraction),
               attachments: [...(attachmentsOfSlot.get(slot.slot) ?? [])].sort(byCodeUnit),
+              // Unresolved stays unflagged: a bone the resolver could not
+              // place is not claimed to be unable to move anything.
+              overlapOnly: reachableSlots !== undefined && !reachableSlots.has(slot.slot),
             };
           });
 

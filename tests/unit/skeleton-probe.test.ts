@@ -4,8 +4,12 @@ import {
   attributeChangedPixels,
   bucketOf,
   planProbes,
+  resolveReachableSlots,
 } from '../../src/skeleton-probe';
+import { resolveConstraintsByBone } from '../../src/skeleton-doc';
+import { readBones, readSlots } from '../../src/skeleton-data';
 import { SpineErrorCode } from '../../src/types';
+import { RICH_SKELETON, clone } from '../helpers/fixtures';
 
 /** Twelve bones, which is the rig size the cost model is documented with. */
 const TWELVE = [
@@ -194,6 +198,61 @@ describe('attributeChangedPixels', () => {
       ['zulu', 'alpha'],
     );
     expect(result.perSlot.map((entry) => entry.slot)).toEqual(['zulu', 'alpha']);
+  });
+});
+
+describe('resolveReachableSlots', () => {
+  // RICH_SKELETON is the rig to ask this of: `head` and `leg-left` sit in
+  // disjoint subtrees (chest -> neck -> head versus hip -> leg-left), and
+  // `leg-left` is IK-driven by `ik-target`, which is parented straight to
+  // the root. So it has both a structural answer and a constraint one.
+  const root = clone(RICH_SKELETON) as Record<string, unknown>;
+  const bones = readBones(root);
+  const slots = readSlots(root, new Set(bones.names));
+  const reachable = resolveReachableSlots(
+    bones.parents,
+    slots.bones,
+    resolveConstraintsByBone(root),
+  );
+  const from = (bone: string): string[] => [...(reachable.get(bone) ?? [])].sort();
+
+  it('reaches the slots of the bone itself and of its descendants', () => {
+    expect(from('head')).toEqual(['head']);
+    expect(from('chest')).toEqual(['glow', 'head']);
+    expect(from('root')).toEqual([
+      'glow',
+      'head',
+      'hitbox',
+      'leg-left',
+      'shadow',
+      'torso',
+    ]);
+  });
+
+  it('does not reach a slot in a disjoint subtree', () => {
+    expect(from('leg-left')).not.toContain('head');
+    expect(from('head')).not.toContain('leg-left');
+  });
+
+  it('follows an IK constraint from its target to the bones it constrains', () => {
+    // `ik-target` is a leaf under the root, so without the constraint it
+    // would reach nothing at all.
+    expect(from('ik-target')).toEqual(['leg-left']);
+  });
+
+  it('makes no claim about a bone it was not given', () => {
+    expect(reachable.has('nonexistent')).toBe(false);
+    expect(reachable.get('nonexistent')).toBeUndefined();
+  });
+
+  it('terminates on a cyclic parent chain', () => {
+    const cyclic = resolveReachableSlots(
+      { a: 'b', b: 'a' },
+      { only: 'a' },
+      resolveConstraintsByBone({}),
+    );
+    expect([...(cyclic.get('a') ?? [])]).toEqual(['only']);
+    expect([...(cyclic.get('b') ?? [])]).toEqual(['only']);
   });
 });
 

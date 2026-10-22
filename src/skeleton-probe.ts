@@ -12,6 +12,7 @@
 import { byCodeUnit } from './canonical-json';
 import {
   BUCKET_THRESHOLDS,
+  ConstraintIndex,
   InfluenceBucket,
   ProbeAxis,
   ProbeMode,
@@ -159,6 +160,12 @@ export interface PixelAttribution {
  * pixels in both. A pixel inside two slots' boxes is credited to both:
  * overlap is real, and draw order — not this function — decides which one
  * the viewer sees.
+ *
+ * The boxes are axis-aligned bounds of a possibly rotated attachment, so
+ * they are larger than the attachment and a slot that did not itself move
+ * can be credited. That is a property of the model, not a defect in it;
+ * {@link resolveReachableSlots} is what separates those entries from
+ * measured movement.
  */
 export function attributeChangedPixels(
   mask: { width: number; height: number; mask: Uint8Array },
@@ -206,6 +213,84 @@ export function attributeChangedPixels(
     );
 
   return { perSlot, unattributed };
+}
+
+/**
+ * Which slots a perturbation of one bone can structurally reach.
+ *
+ * {@link attributeChangedPixels} credits a changed pixel to every slot
+ * whose axis-aligned bounding box contains it, and those boxes are larger
+ * than the attachments they bound, so a slot that did not itself move is
+ * credited whenever its box overlaps one that did. The skeleton data
+ * states exactly which slots a bone can move, so the document flags those
+ * entries rather than leaving a reader to tell them apart by eye.
+ *
+ * A slot is reachable from a bone when the slot's own bone IS that bone or
+ * one of its descendants, or when a constraint carries the movement across
+ * to it. Constraint propagation is included because an IK or transform
+ * constraint genuinely moves bones outside the perturbed bone's subtree,
+ * and calling that an overlap artefact would be the opposite error: moving
+ * a constraint's target moves every bone it constrains, and their
+ * subtrees. A path constraint propagates from the bone its target slot is
+ * bound to; a physics constraint drives its own bone, which that bone's
+ * own subtree already covers.
+ *
+ * Structural, never probed — the same reason `resolveConstraintsByBone`
+ * reads the data rather than inferring from pixels. One entry per declared
+ * bone; a bone with no entry is one this function could not resolve, and
+ * no claim is made about it.
+ */
+export function resolveReachableSlots(
+  boneParents: Record<string, string | null>,
+  slotBones: Record<string, string | null>,
+  constraints: ConstraintIndex,
+): Map<string, Set<string>> {
+  const children = new Map<string, string[]>();
+  for (const [bone, parent] of Object.entries(boneParents)) {
+    if (parent === null) continue;
+    const list = children.get(parent);
+    if (list === undefined) children.set(parent, [bone]);
+    else list.push(bone);
+  }
+
+  // source bone -> bones a constraint makes follow it.
+  const follows = new Map<string, string[]>();
+  const link = (source: string | null, dependents: string[]): void => {
+    if (source === null || dependents.length === 0) return;
+    const list = follows.get(source);
+    if (list === undefined) follows.set(source, [...dependents]);
+    else list.push(...dependents);
+  };
+  for (const entry of constraints.ik) link(entry.target, entry.bones);
+  for (const entry of constraints.transform) link(entry.target, entry.bones);
+  for (const entry of constraints.path) link(entry.targetBone, entry.bones);
+
+  const slotsOfBone = new Map<string, string[]>();
+  for (const [slot, bone] of Object.entries(slotBones)) {
+    if (bone === null) continue;
+    const list = slotsOfBone.get(bone);
+    if (list === undefined) slotsOfBone.set(bone, [slot]);
+    else list.push(slot);
+  }
+
+  const reachable = new Map<string, Set<string>>();
+  for (const bone of Object.keys(boneParents)) {
+    const moved = new Set<string>();
+    const queue = [bone];
+    while (queue.length > 0) {
+      const current = queue.pop() as string;
+      if (moved.has(current)) continue;
+      moved.add(current);
+      for (const child of children.get(current) ?? []) queue.push(child);
+      for (const dependent of follows.get(current) ?? []) queue.push(dependent);
+    }
+    const slots = new Set<string>();
+    for (const moving of moved) {
+      for (const slot of slotsOfBone.get(moving) ?? []) slots.add(slot);
+    }
+    reachable.set(bone, slots);
+  }
+  return reachable;
 }
 
 /**

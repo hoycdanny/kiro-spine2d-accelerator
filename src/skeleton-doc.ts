@@ -272,6 +272,17 @@ export interface InfluenceSlotDoc {
   changedFraction: number;
   bucket: InfluenceBucket;
   attachments: string[];
+  /**
+   * True when the perturbed bone cannot move this slot at all: the slot's
+   * bone is neither the perturbed bone nor one of its descendants, and no
+   * constraint carries movement across to it. Credit is by axis-aligned
+   * bounding box, and a box is larger than the attachment it bounds, so
+   * these pixels are an overlap artefact rather than measured movement.
+   * Resolved structurally from the data by `resolveReachableSlots`, never
+   * from pixels. False also means "not claimed": a bone the resolver could
+   * not place is never flagged.
+   */
+  overlapOnly: boolean;
 }
 
 export interface InfluenceBoneDoc {
@@ -1300,11 +1311,11 @@ const HASH_NOTE =
 
 /** The ten caveats every document carries, in order. */
 const UNCONDITIONAL_NOTES = [
-  'World transforms are derived affinely in Node and omit shear composition and reflection; the measured influence section is the authority on what moves.',
+  'World transforms are derived affinely in Node and omit shear composition and reflection; the measured influence section is the authority on what moves, read with the bounding-box credit rule noted below.',
   'Loopability is inferred from first/last keyframe values because skeleton data stores no loop flag.',
   'Influence is measured from software-rasterised renders at the recorded canvas size; buckets survive a machine change, the fourth decimal of a fraction may not.',
-  "A pixel inside two slots' quads is credited to both; draw order decides which one a viewer sees.",
-  `unattributedFraction > 0 means pixels moved that no slot quad covers ${DASH} usually a clipping attachment or additive spill.`,
+  `A changed pixel is credited to every slot whose AXIS-ALIGNED BOUNDING BOX contains it, and a rotated attachment's box is larger than the attachment, so a slot that did not itself move is credited when its box overlaps one that did ${DASH} those entries carry overlapOnly: true, resolved from the hierarchy and the constraints rather than from pixels. A pixel inside two boxes is credited to both; draw order decides which slot a viewer sees.`,
+  `unattributedFraction > 0 means pixels moved that no slot box covers ${DASH} usually a clipping attachment or additive spill.`,
   'skeleton.hash alone does not detect change; the fingerprint is computed by this tool over the normalised data.',
   'Lists in this document are sorted by code unit, not by locale, so the file is byte-identical on any machine. Animations alone are sorted the way skeleton_inspect sorts them, for consistency between the two tools.',
   'A bone whose parent is not declared, or whose parent chain is circular, is shown at top level with its declared parent named; its world transform is its local transform, and it is not counted as a root.',
@@ -1733,6 +1744,17 @@ export function renderDocumentMarkdown(doc: SkeletonDocument): string {
     }
     lines.push('');
     lines.push(
+      'A changed pixel is credited to every slot whose **axis-aligned bounding box** contains it. ' +
+        'A box is larger than the attachment it bounds, more so for a rotated one, so a slot that did ' +
+        'not itself move is credited when its box overlaps one that did.',
+    );
+    lines.push(
+      `Slots marked ${code('[overlap]')} are exactly those: the perturbed bone is not in their bone's ` +
+        'subtree and no constraint links the two, so their pixels are an overlap artefact and not ' +
+        'movement. Unmarked slots can be moved by the perturbed bone.',
+    );
+    lines.push('');
+    lines.push(
       '| Bone | Axis | Delta | Changed pixels | Fraction | Bucket | Max channel delta | Influenced slots | Unattributed |',
     );
     lines.push('| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
@@ -1743,7 +1765,7 @@ export function renderDocumentMarkdown(doc: SkeletonDocument): string {
           : entry.slots
               .map(
                 (slot) =>
-                  `${code(slot.slot)} ${ARROW} ${slot.attachments.length === 0 ? DASH : list(slot.attachments)} (${slot.changedFraction})`,
+                  `${code(slot.slot)} ${ARROW} ${slot.attachments.length === 0 ? DASH : list(slot.attachments)} (${slot.changedFraction})${slot.overlapOnly ? ' [overlap]' : ''}`,
               )
               .join('; ');
       lines.push(
