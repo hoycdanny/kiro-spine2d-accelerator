@@ -393,4 +393,27 @@ describe('exportInteractivePreview', () => {
     expect(result.code).toBe(SpineErrorCode.InvalidArgument);
     expect(result.hint).toContain('spin');
   });
+
+  it('rejects a skin that does not exist and lists the real ones', () => {
+    // The page applies a skin only when the skeleton has it, so without
+    // this check a typo would write a file on the default skin and report
+    // success.
+    const host = previewHost();
+    const result = exportInteractivePreview(host, { ...ARGS, skin: 'nope' });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe(SpineErrorCode.InvalidArgument);
+    expect(result.hint).toContain('default');
+    expect(Object.keys(host.writes)).toEqual([]);
+  });
+
+  it('applies a skin the skeleton does have', () => {
+    const host = previewHost();
+    const result = exportInteractivePreview(host, { ...ARGS, skin: 'default' });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(host.writes[result.data.outputFile]).toContain('"skin":"default"');
+  });
 });

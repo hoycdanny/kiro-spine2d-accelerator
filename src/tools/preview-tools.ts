@@ -352,6 +352,9 @@ export function exportInteractivePreview(
   const animation = pickAnimation(args.animation, skeleton.data);
   if (!animation.ok) return animation;
 
+  const skin = pickSkin(args.skin, skeleton.data);
+  if (!skin.ok) return skin;
+
   const runtime = loadRuntimeSource(host);
   if (!runtime.ok) return runtime;
 
@@ -365,7 +368,7 @@ export function exportInteractivePreview(
       Object.entries(images.data).map(([name, png]) => [name, toDataUrl(png)]),
     ),
     animation: animation.data,
-    skin: args.skin ?? null,
+    skin: skin.data,
     // A pma mismatch is the usual cause of dark or haloed edges, so follow
     // what the atlas declares unless the caller insists otherwise.
     premultipliedAlpha:
@@ -426,6 +429,36 @@ function pickAnimation(
       names.length > 0
         ? `Available animations: ${names.join(', ')}.`
         : 'This skeleton has no animations; omit `animation` to render the setup pose.',
+    );
+  }
+
+  return ok(requested, '');
+}
+
+/**
+ * Validate the skin to apply.
+ *
+ * The page applies a skin only when the skeleton has it, so a misspelled
+ * name would otherwise yield a success result and a file rendered on the
+ * default skin — the "silently renders the wrong thing" case. Checked here
+ * for the same reason `pickAnimation` checks the animation, and with the
+ * list the payload already carries.
+ */
+function pickSkin(
+  requested: string | undefined,
+  report: SkeletonReport,
+): SpineResult<string | null> {
+  if (requested === undefined) return ok(null, '');
+
+  const names = report.skins.names;
+
+  if (!names.includes(requested)) {
+    return err(
+      SpineErrorCode.InvalidArgument,
+      `Skin "${requested}" is not in this skeleton.`,
+      names.length > 0
+        ? `Available skins: ${names.join(', ')}.`
+        : 'This skeleton declares no skins; omit `skin`.',
     );
   }
 
