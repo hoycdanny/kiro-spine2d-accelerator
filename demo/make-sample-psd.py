@@ -333,8 +333,20 @@ def _box(geom: tuple) -> tuple[float, float, float, float]:
     return tuple(value * SUPERSAMPLE for value in geom)  # type: ignore[return-value]
 
 
-def _paint(draw: ImageDraw.ImageDraw, shape: Shape) -> None:
+def _paint(canvas: Image.Image, shape: Shape) -> None:
+    """Draw one shape onto the part's canvas.
+
+    A shape whose colour is translucent is drawn on a scratch layer and
+    composited, because ImageDraw *replaces* pixels instead of blending
+    them: drawing the cheek blush straight onto the head would punch a 38%
+    alpha hole through the face, which looks like blush over a light page
+    and like a dark smudge over a dark one.
+    """
     width = max(1, shape.width * SUPERSAMPLE)
+    colour = shape.fill if shape.fill is not None else shape.stroke
+    translucent = colour is not None and colour[3] < 255
+    target = Image.new("RGBA", canvas.size, TRANSPARENT) if translucent else canvas
+    draw = ImageDraw.Draw(target)
 
     if shape.kind == "polygon":
         points = _points(shape.geom)
@@ -367,6 +379,9 @@ def _paint(draw: ImageDraw.ImageDraw, shape: Shape) -> None:
     else:  # pragma: no cover - the table is a closed set
         raise ValueError(f"unknown shape kind: {shape.kind}")
 
+    if translucent:
+        canvas.alpha_composite(target)
+
 
 def _shade(canvas: Image.Image, bias: float) -> Image.Image:
     """Lay one soft band of shadow over the part, clipped to its silhouette."""
@@ -398,15 +413,13 @@ def render_part(part: Part) -> Image.Image:
     size = (DOC_SIZE[0] * SUPERSAMPLE, DOC_SIZE[1] * SUPERSAMPLE)
     canvas = Image.new("RGBA", size, TRANSPARENT)
 
-    draw = ImageDraw.Draw(canvas)
     for shape in part.shapes:
-        _paint(draw, shape)
+        _paint(canvas, shape)
 
     canvas = _shade(canvas, part.shade_bias)
 
-    draw = ImageDraw.Draw(canvas)
     for shape in part.details:
-        _paint(draw, shape)
+        _paint(canvas, shape)
 
     return canvas.resize(DOC_SIZE, Image.Resampling.LANCZOS)
 
