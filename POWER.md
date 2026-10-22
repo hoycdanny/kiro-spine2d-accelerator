@@ -210,7 +210,7 @@ and read the matching steering file before acting. Delete or rename the file to 
 | Tool | Purpose |
 |------|---------|
 | `psd_to_skeleton` | Layered PSD to skeleton JSON + atlas + page image, plus an `images/` folder of loose per-attachment PNGs next to the JSON, then inspect and lint the result. In that folder it manages only the PNGs it owns — anything else there is reported, never deleted. Runs through the Python sidecar. Works on a trial license; `spine_import` afterwards does not |
-| `skeleton_animate` | Generate `idle`, `walk`, `wave`, `jump` and `turn_head` animations into an exported rig and write the result as a second JSON file. Each template declares the bones it needs: a required bone missing means `VALIDATION_FAILED` naming the rig's actual bones and nothing written, because a substituted bone produces motion that looks like success; a missing optional bone drops only its own timelines and is reported. Existing animations survive and `skeleton.hash` is recomputed, with the algorithm named in the file. Pure data work — no editor, no license, no Python. This is mechanically plausible placeholder motion, not artist quality — linear keyframes, no curve shaping, no secondary motion, no weight shift, no foot locking. Open it in the Spine editor to refine it |
+| `skeleton_animate` | Generate `idle`, `walk`, `wave`, `jump` and `turn_head` animations into an exported rig and write the result as a second JSON file. Each template declares the bones it needs: a required bone missing means `VALIDATION_FAILED` naming the rig's actual bones and nothing written, because a substituted bone produces motion that looks like success; a missing optional bone drops only its own timelines and is reported. Existing animations survive and `skeleton.hash` is recomputed, with the algorithm named in the file. Pure data work — no editor, no license, no Python. Needs no Spine installation and no Python sidecar. This is mechanically plausible placeholder motion, not finished animation — linear keyframes, no curve shaping, no secondary motion, no weight shift, no foot locking. Open it in the Spine editor to refine it |
 
 ### Group D — verification
 
@@ -331,6 +331,32 @@ See `steering/ci-pipeline.md` and `templates/ci/`. The shape is: pin the editor 
 batch export, lint as a gate, visual regression as a gate. Image and video export need a windowing
 system and OpenGL, so CI should export data and pack atlases only.
 
+### Workflow 7: Understand and animate an unfamiliar rig
+
+**"Someone handed me this rig. What does it do, and can I see it move?"**
+
+1. `skeleton_inspect` first, for the cheap structural answer: bone count, depth, slots, skins,
+   constraints, animations.
+2. `skeleton_document` with `probeMode: "off"` for speed. That writes
+   `<basename>.spine-doc.md` and `<basename>.spine-doc.json` with three of the four sections —
+   hierarchy with derived world transforms, constraints resolved per bone from the data, and a
+   motion profile per animation — and launches no browser at all.
+3. `skeleton_document` again with `probeMode: "rotate"` when the influence question actually comes
+   up ("which images does this bone move?"). That one perturbs a single bone and re-renders, so it
+   costs `1 + bones × axes` renders and needs Chromium. Without Chromium it still writes both
+   files and says which section is missing and why.
+4. `skeleton_animate` when the rig has no animations to look at, or none that answer the question.
+   Pick a template whose required bones the rig has; a template that does not fit fails with
+   `VALIDATION_FAILED` naming the missing bones rather than substituting one.
+5. `skeleton_diff` from the input to the `<basename>-animated.json` output, to state exactly what
+   was added.
+6. `render_preview` on the output, sampling several times across the animation, to see it move.
+
+**Relay the caveat every time you offer `skeleton_animate`:** what it writes is mechanically
+plausible placeholder motion, not finished animation — linear keyframes, no curve shaping, no
+secondary motion, no weight shift, no foot locking. Say so before the developer opens it, not
+after. It is a starting point to refine in the Spine editor, not a deliverable.
+
 ## Demo
 
 `npm run demo` runs a scripted, self-narrating path through ten steps against the real server:
@@ -367,3 +393,13 @@ Stated plainly so they are not mistaken for working features:
 - **No mesh or weight generation.** The PSD pipeline produces region attachments only.
 - **Godot support is planning-level.** The scaffold encodes the file-naming rules and the two
   integration paths; it has not been run against a Godot project.
+- **Measured influence is comparable, its last digits are not.** `skeleton_document`'s influence
+  buckets (`none`, `slight`, `moderate`, `strong`) are stable across machines, but the fourth
+  decimal of a changed-pixel fraction is not: it depends on the GPU, the driver and the Chromium
+  build. Compare buckets and relative ordering across machines, not raw fractions. The derived
+  world transforms in the hierarchy section are an affine approximation that omits shear
+  composition and reflection, so they locate a bone rather than reproduce the runtime exactly.
+- **Generated animations carry no mesh deformation.** `skeleton_animate` writes bone timelines
+  only. A weighted mesh still animates correctly, because it follows the bones it is bound to, but
+  no `deform` timeline is ever generated, so nothing reshapes a mesh independently of its bones.
+  The result is mechanically plausible placeholder motion to refine in the editor.

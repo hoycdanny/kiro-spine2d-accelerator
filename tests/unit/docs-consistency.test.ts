@@ -386,3 +386,58 @@ describe('the demo is wired up', () => {
     expect(POWER).toContain('npm run demo');
   });
 });
+
+describe('skeleton intelligence tools are documented honestly', () => {
+  // Every assertion here is a language-neutral literal — a tool name, a file
+  // extension, or an English phrase that is deliberately kept in English in
+  // every translation. That is what makes the four translated READMEs
+  // checkable without reading them.
+  const READMES = ['README.md', 'README_ZH.md', 'README_CN.md', 'README_JP.md', 'README_KR.md'];
+  const TOOLS = ['skeleton_document', 'skeleton_animate'];
+
+  // Overselling a generator is the specific failure this block exists to
+  // prevent, so the forbidden phrasings are matched case-insensitively.
+  const FORBIDDEN = ['artist-quality', 'artist quality', 'production-ready', 'replaces an animator'];
+
+  it('names both tools in POWER.md and in every README language', () => {
+    for (const tool of TOOLS) {
+      expect(POWER).toContain(tool);
+    }
+
+    for (const file of READMES) {
+      const content = read(file);
+      for (const tool of TOOLS) {
+        expect(content.includes(tool)).toBe(true);
+      }
+    }
+  });
+
+  it('claims no artist quality anywhere', () => {
+    const files = ['POWER.md', ...READMES];
+    const offenders: string[] = [];
+
+    for (const file of files) {
+      const lowered = read(file).toLowerCase();
+      for (const phrase of FORBIDDEN) {
+        if (lowered.includes(phrase)) offenders.push(`${file}: ${phrase}`);
+      }
+    }
+
+    expect(offenders).toEqual([]);
+  });
+
+  it('states the placeholder-motion caveat next to the generator', () => {
+    expect(POWER).toContain('mechanically plausible');
+    expect(README).toContain('mechanically plausible');
+  });
+
+  it('names the document files and the fingerprint', () => {
+    expect(POWER).toContain('spine-doc.json');
+    expect(POWER).toContain('fingerprint');
+  });
+
+  it('documents both tools in the steering files that cover them', () => {
+    expect(read('steering', 'skeleton-data-lint.md')).toContain('skeleton_document');
+    expect(read('steering', 'psd-to-rig.md')).toContain('skeleton_animate');
+  });
+});

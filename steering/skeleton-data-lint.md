@@ -112,6 +112,42 @@ It also separates two things that look the same in a text diff:
 Run the diff *before* a visual regression. A semantic diff explains what changed; pixels only show
 that something did.
 
+## Documenting what a rig does
+
+`skeleton_inspect` answers "what is in this file". `skeleton_document` answers "what does this rig
+*do*", and writes the answer to `<basename>.spine-doc.md` plus `<basename>.spine-doc.json` so it
+can be read, reviewed and diffed later. Reach for it when the developer is new to a rig, when
+someone asks which bone moves which image, or when a handover needs a written artefact.
+
+Four sections, and they do not all cost the same:
+
+| Section | Where the answer comes from |
+|---|---|
+| Bone hierarchy with setup pose and derived world transforms | the data; composed parent-first in Node, so it needs no browser |
+| Constraints resolved per bone (IK, transform, path, physics) | the data only — **never inferred from pixels**. What follows what is a declared fact, so read it rather than guess it from a render |
+| Per-bone influence | **measured** by perturbing one bone and re-rendering. Needs Chromium |
+| Motion profile per animation | the data: duration, timelines, keyframes, loopability, root motion, most-active bones |
+
+**What the probe costs.** `1 + bones × axes` renders — one neutral frame plus one per probe. In
+`probeMode: "rotate"` that is one axis per bone; in `"full"` it is three. It is *not*
+`bones × frames`: animations are never played during a probe, the pose is always the setup pose.
+Measured here, a 12-bone rig in rotate mode at the default 256×256 took 12 probes in about 0.7 s,
+and one browser launch dominates that number. Start with `probeMode: "off"` for the three data
+sections, then re-run with `"rotate"` when the influence question actually comes up. Without
+Chromium the tool still writes both files and records which section is missing and why, rather
+than failing.
+
+Report influence by **bucket** (`none`, `slight`, `moderate`, `strong`) and by relative ordering.
+The fourth decimal of a changed-pixel fraction depends on the GPU, the driver and the Chromium
+build, so do not treat it as a figure two machines will agree on.
+
+**The `skeleton.hash` trap.** The hash does not detect every change, so the document records its
+own content fingerprint alongside it. The measured example from this repo's own demo output:
+`demo/out/generated/hero.json` and `hero-animated.json` both carry
+`skeleton.hash` `cda0274fd3c3cab62e8d3e` while differing by two whole animations. The fingerprint
+differs, which is why a re-run reports `fingerprintChanged` rather than `fresh`. When a developer
+says "the hash is the same, so nothing changed", that is the counter-example to show them.
+
 ## Reporting
 
 Group by severity, lead with errors, and give each finding its fix. When the fix belongs in the

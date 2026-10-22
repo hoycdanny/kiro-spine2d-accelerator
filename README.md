@@ -112,7 +112,7 @@ authenticate.
 | Tool | What it does |
 |---|---|
 | `psd_to_skeleton` | Layered PSD to skeleton JSON + atlas + page image, then inspect and lint it |
-| `skeleton_animate` | Generate `idle`, `walk`, `wave`, `jump` or `turn_head` into an exported rig, writing a second JSON file. A rig missing a required bone fails with the bones it does have rather than substituting one. This is mechanically plausible placeholder motion, not artist quality — linear keyframes, no curve shaping, no secondary motion, no weight shift, no foot locking. Open it in the Spine editor to refine it |
+| `skeleton_animate` | Generate `idle`, `walk`, `wave`, `jump` or `turn_head` into an exported rig, writing a second JSON file. A rig missing a required bone fails with the bones it does have rather than substituting one. This is mechanically plausible placeholder motion, not finished animation — linear keyframes, no curve shaping, no secondary motion, no weight shift, no foot locking. Open it in the Spine editor to refine it |
 | `render_preview` | Render animation frames with spine-ts in headless Chromium |
 | `visual_regression` | Compare against baselines, write diffs, gate on failure |
 | `preview_export_html` | One self-contained HTML file that plays the skeleton in any browser, with play/pause, a timeline scrub, an animation selector, speed and debug bones. Runtime, skeleton, atlas and page images embedded — no server, nothing fetched. Distributing it needs your own Spine license |
@@ -190,6 +190,8 @@ be closed.
 | Export settings field names | Not publicly documented. The templates are shaped from the documented dialog; calibrate with `spine_export_settings_capture`. `pack.json` has no such gap. |
 | Binary `.skel` parsing | Out of scope for now; the data layer reads JSON exports. |
 | Godot integration | The naming rules and install paths come from Esoteric's docs; not run against a Godot project. |
+| Template animations as finished work | `skeleton_animate` writes mechanically plausible placeholder motion, not finished animation: linear keyframes, no curve shaping, no secondary motion, no weight shift, no foot locking, and no mesh deformation. Open the result in the Spine editor and refine it. |
+| The five templates beyond one platform and one Chromium | Their rendered output was confirmed on win32 x64, Windows 10.0.19045, Node v24.14.0, playwright-core 1.62.0, Chromium 151.0.7922.34, @esotericsoftware/spine-webgl 4.2.120. Nothing has been verified on macOS, Linux, or any other GPU/driver combination. |
 
 ## License
 

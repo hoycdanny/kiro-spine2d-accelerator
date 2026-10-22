@@ -111,6 +111,7 @@ matching version-specific key names. When extending it, keep that property: it i
 | Auditing data | `skeleton-data-lint.md` |
 | Version mismatches | `version-compatibility.md` |
 | PSD generation | `psd-to-rig.md` |
+| Rig documentation and placeholder animation | `skeleton-data-lint.md`, `psd-to-rig.md` |
 | Previews and regression | `visual-regression.md` |
 | Engine integration | `runtime-integration-unity.md`, `runtime-integration-web.md`, `runtime-integration-godot.md` |
 | Pipelines | `ci-pipeline.md`, `workflow-automation.md` |
