@@ -110,10 +110,24 @@ window.__spineInteractiveViewer = async function (input) {
   const loopToggle = byId('loop-toggle');
   const bonesToggle = byId('bones-toggle');
 
+  // The control strip is rendered enabled and reading "Pause", because the
+  // normal path starts playing. Every fail() site returns before the
+  // listeners are registered, so without this the page would show a red
+  // error line under a strip that looks like a running player and answers
+  // no click. A disabled strip is the honest signal.
+  function disableControls() {
+    playToggle.textContent = 'Play';
+    playToggle.setAttribute('aria-pressed', 'false');
+    for (const control of [playToggle, timeline, animationSelect, speedSelect, loopToggle, bonesToggle]) {
+      control.disabled = true;
+    }
+  }
+
   function fail(message) {
     status.textContent = message;
     status.className = 'status failed';
     window.__spineViewerError = message;
+    disableControls();
   }
 
   canvas.width = input.width;
@@ -208,6 +222,10 @@ window.__spineInteractiveViewer = async function (input) {
 
   const STEP_SECONDS = 1 / 60;
   const MAX_STEPS = 20000;
+  // The furthest a seek can re-pose from the setup pose within the step
+  // budget. The timeline never offers past it and seekTo never goes past
+  // it, so the readout and the pose cannot disagree.
+  const MAX_SEEK_SECONDS = MAX_STEPS * STEP_SECONDS;
   const PADDING = 0.15;
 
   function durationOf(name) {
@@ -231,7 +249,7 @@ window.__spineInteractiveViewer = async function (input) {
     // Clamp to the work the step budget can actually cover: folding the
     // remainder into the final advance would hand physics the one large
     // delta the fixed stepping exists to avoid.
-    const time = Math.min(Math.max(requestedTime, 0), MAX_STEPS * STEP_SECONDS);
+    const time = Math.min(Math.max(requestedTime, 0), MAX_SEEK_SECONDS);
     skeleton.setToSetupPose();
     state.clearTracks();
     if (!animationName) {
@@ -308,7 +326,9 @@ window.__spineInteractiveViewer = async function (input) {
   function syncTimeline() {
     const duration = durationOf(animationName);
     timeline.min = '0';
-    timeline.max = (duration > 0 ? duration : 1).toFixed(3);
+    // Capped for the same reason seekTo clamps: a slider that offers a time
+    // the seek cannot reach would report a pose the character is not in.
+    timeline.max = Math.min(duration > 0 ? duration : 1, MAX_SEEK_SECONDS).toFixed(3);
     timeline.step = '0.01';
     timeline.disabled = duration <= 0;
     timeline.value = currentTime.toFixed(3);
@@ -334,7 +354,7 @@ window.__spineInteractiveViewer = async function (input) {
   timeline.addEventListener('input', function () {
     // Scrubbing is an explicit "hold it here", so it pauses.
     setPlaying(false);
-    currentTime = Number(timeline.value) || 0;
+    currentTime = Math.min(Math.max(Number(timeline.value) || 0, 0), MAX_SEEK_SECONDS);
     seekTo(currentTime);
     syncTimeline();
     draw();

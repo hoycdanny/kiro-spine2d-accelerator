@@ -100,6 +100,7 @@ MCP 設定（`mcp.json`）に登録します。
 | `psd_to_skeleton` | レイヤー PSD → スケルトン JSON + atlas + ページ画像。生成後に検査と lint も実行 |
 | `render_preview` | spine-ts をヘッドレス Chromium で動かしアニメーションのフレームを描画 |
 | `visual_regression` | ベースラインと比較し、diff 画像を出力。失敗でゲートを閉じます |
+| `preview_export_html` | すべてを内包した 1 枚の HTML ファイル。どのブラウザでもスケルトンを再生でき、再生／一時停止、タイムラインのスクラブ、アニメーション選択、速度、ボーン表示が使えます。ランタイム、スケルトン、atlas、ページ画像はすべて埋め込み済み — サーバー不要、外部への取得もありません。このファイルを配布するには自分の Spine ライセンスが必要です |
 | `runtime_scaffold` | ターゲットごとのファイル名要件、mix テーブル付きのコントローラーコード、手順 README |
 
 ## 典型的な流れ
@@ -110,6 +111,7 @@ skeleton_inspect  input, atlas        # データの中身と、atlas に欠け�
 skeleton_lint     input, atlas        # チーム規約と予算に照らして正しいか
 render_preview    skeleton, atlas     # 実際に描画されるか
 visual_regression skeleton, atlas     # 見た目は変わっていないか
+preview_export_html skeleton, atlas   # クライアントが開くだけの 1 ファイル、サーバー不要
 runtime_scaffold  target=unity        # エンジン側に必要なものは何か
 ```
 

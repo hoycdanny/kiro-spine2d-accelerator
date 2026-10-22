@@ -127,6 +127,22 @@ describe('buildInteractiveHtml', () => {
     expect(html).toContain('window.__spineViewerError = message;');
   });
 
+  it('shuts the controls down when the viewer fails', () => {
+    // Every fail() site returns before the listeners are registered, so a
+    // strip left enabled and reading "Pause" would answer no click.
+    expect(html).toContain('function disableControls()');
+    expect(html).toContain('disableControls();');
+    expect(html).toMatch(/for \(const control of \[playToggle, timeline, animationSelect, speedSelect, loopToggle, bonesToggle\]\)/);
+  });
+
+  it('never offers a time the seek cannot re-pose to', () => {
+    // Past the step budget the pose would stop advancing while the readout
+    // kept counting, so the slider's max and the scrub are clamped too.
+    expect(html).toContain('const MAX_SEEK_SECONDS = MAX_STEPS * STEP_SECONDS;');
+    expect(html).toContain('timeline.max = Math.min(duration > 0 ? duration : 1, MAX_SEEK_SECONDS).toFixed(3);');
+    expect(html).toContain('currentTime = Math.min(Math.max(Number(timeline.value) || 0, 0), MAX_SEEK_SECONDS);');
+  });
+
   it('escapes the runtime bundle the way every other payload is escaped', () => {
     const risky = buildInteractiveHtml('var x = "</script>";', input());
     const scripts = [...risky.matchAll(/<\/script/g)];

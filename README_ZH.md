@@ -108,6 +108,7 @@ Server 走 stdio、不開任何網路埠，因此沒有需要認證的監聽面�
 | `psd_to_skeleton` | 分層 PSD → 骨架 JSON + atlas + 頁面圖，並自動檢視與稽核結果 |
 | `render_preview` | 用 spine-ts 在 headless Chromium 渲染動畫畫格 |
 | `visual_regression` | 與基準圖比對、輸出 diff 圖、失敗即擋 |
+| `preview_export_html` | 單一自帶所有資源的 HTML 檔，在任何瀏覽器裡播放骨架：播放／暫停、時間軸拖曳、動畫選單、速度、骨架除錯線。runtime、骨架、atlas 與頁面圖全部內嵌 —— 不需伺服器，也不向外抓取任何東西。把這個檔案交付出去需要你自己的 Spine 授權 |
 | `runtime_scaffold` | 各平台的檔名要求、含 mix 表的控制腳本，以及步驟 README |
 
 ## 一條典型路徑
@@ -118,6 +119,7 @@ skeleton_inspect  input, atlas        # 資料裡有什麼，atlas 有沒有缺�
 skeleton_lint     input, atlas        # 依團隊規範與預算是否正確？
 render_preview    skeleton, atlas     # 真的畫得出來嗎？
 visual_regression skeleton, atlas     # 外觀有沒有變？
+preview_export_html skeleton, atlas   # 一個檔案就能交給客戶打開，不用伺服器
 runtime_scaffold  target=unity        # 引擎端需要什麼？
 ```
 

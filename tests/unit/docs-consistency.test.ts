@@ -251,6 +251,18 @@ describe('the Spine Runtimes license notice', () => {
     expect(README).toContain('preview_export_html');
   });
 
+  it('lists the tool in every language\'s tool table, not only in the license note', () => {
+    // A reader of a translated README who only meets the tool inside the
+    // license paragraph is told their output needs a license without ever
+    // being told the tool exists.
+    for (const file of DOCS) {
+      const table = read(file)
+        .split('\n')
+        .filter((line) => line.startsWith('| `preview_export_html`'));
+      expect(table).not.toEqual([]);
+    }
+  });
+
   it('names the exported file in every demo README language', () => {
     for (const file of ['README.md', 'README_ZH.md', 'README_CN.md', 'README_JP.md', 'README_KR.md']) {
       expect(read('demo', file)).toContain('hero.html');

@@ -99,6 +99,7 @@ MCP 설정(`mcp.json`)에 등록합니다.
 | `psd_to_skeleton` | 레이어 PSD → 스켈레톤 JSON + atlas + 페이지 이미지. 생성 후 검사와 린트까지 수행 |
 | `render_preview` | 헤드리스 Chromium에서 spine-ts로 애니메이션 프레임 렌더링 |
 | `visual_regression` | 베이스라인과 비교하고 diff 이미지를 기록. 실패 시 게이트를 닫습니다 |
+| `preview_export_html` | 모든 것이 들어 있는 단일 HTML 파일. 어떤 브라우저에서도 스켈레톤을 재생하며 재생/일시정지, 타임라인 스크럽, 애니메이션 선택, 속도, 본 디버그 표시를 제공합니다. 런타임, 스켈레톤, atlas, 페이지 이미지가 모두 내장 — 서버도 외부 요청도 필요 없습니다. 이 파일을 배포하려면 자신의 Spine 라이선스가 필요합니다 |
 | `runtime_scaffold` | 타깃별 파일명 요구사항, mix 테이블이 포함된 컨트롤러 코드, 단계별 README |
 
 ## 전형적인 흐름
@@ -109,6 +110,7 @@ skeleton_inspect  input, atlas        # 데이터에 무엇이 있고 atlas에 �
 skeleton_lint     input, atlas        # 팀 규칙과 예산에 비추어 올바른지
 render_preview    skeleton, atlas     # 실제로 렌더링되는지
 visual_regression skeleton, atlas     # 외형이 바뀌지 않았는지
+preview_export_html skeleton, atlas   # 클라이언트가 그냥 열기만 하는 단일 파일, 서버 불필요
 runtime_scaffold  target=unity        # 엔진 쪽에 필요한 것은?
 ```
 

@@ -125,6 +125,7 @@ skeleton_inspect  input, atlas        # what is in the data, and does the atlas 
 skeleton_lint     input, atlas        # is it correct, by team rules and budgets?
 render_preview    skeleton, atlas     # does it render?
 visual_regression skeleton, atlas     # does it still look the same?
+preview_export_html skeleton, atlas   # one file a client opens, no server
 runtime_scaffold  target=unity        # what does the engine need?
 ```
 
