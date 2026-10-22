@@ -395,9 +395,35 @@ describe('skeleton intelligence tools are documented honestly', () => {
   const READMES = ['README.md', 'README_ZH.md', 'README_CN.md', 'README_JP.md', 'README_KR.md'];
   const TOOLS = ['skeleton_document', 'skeleton_animate'];
 
-  // Overselling a generator is the specific failure this block exists to
-  // prevent, so the forbidden phrasings are matched case-insensitively.
-  const FORBIDDEN = ['artist-quality', 'artist quality', 'production-ready', 'replaces an animator'];
+  /**
+   * What must not appear is the *claim*, not the words.
+   *
+   * An earlier version of this test banned the substring `artist quality`
+   * outright. That cannot tell a boast from a disclaimer, so it also banned
+   * "not artist quality" — the honest disclaimer the tool itself prints, and
+   * the exact opposite of overselling. The rule it was derived from, FR-B14
+   * and AC-34 in requirements.md, bans wording that *claims or implies*
+   * artist quality. These patterns ban that instead.
+   *
+   * `(?<!not )` and friends are what keep the disclaimer legal: the phrase is
+   * an offence only when nothing negates it.
+   */
+  const FORBIDDEN_CLAIMS: Array<{ label: string; pattern: RegExp }> = [
+    {
+      label: 'claims artist quality without negating it',
+      pattern: /(?<!\b(?:not|never|no|isn't|is not|rather than)\s)\bartist[- ]quality\b/i,
+    },
+    {
+      label: 'claims production readiness without negating it',
+      pattern: /(?<!\b(?:not|never|no|isn't|is not|rather than)\s)\bproduction[- ]ready\b/i,
+    },
+    { label: 'claims it replaces an animator', pattern: /\breplaces an animator\b/i },
+    { label: 'claims professional quality', pattern: /\bprofessional[- ](?:quality|grade)\b/i },
+  ];
+
+  function claimsIn(content: string): string[] {
+    return FORBIDDEN_CLAIMS.filter((claim) => claim.pattern.test(content)).map((claim) => claim.label);
+  }
 
   it('names both tools in POWER.md and in every README language', () => {
     for (const tool of TOOLS) {
@@ -413,22 +439,51 @@ describe('skeleton intelligence tools are documented honestly', () => {
   });
 
   it('claims no artist quality anywhere', () => {
-    const files = ['POWER.md', ...READMES];
     const offenders: string[] = [];
 
-    for (const file of files) {
-      const lowered = read(file).toLowerCase();
-      for (const phrase of FORBIDDEN) {
-        if (lowered.includes(phrase)) offenders.push(`${file}: ${phrase}`);
-      }
+    for (const file of ['POWER.md', ...READMES]) {
+      for (const label of claimsIn(read(file))) offenders.push(`${file}: ${label}`);
     }
 
     expect(offenders).toEqual([]);
   });
 
+  it('fails on the boast and passes the disclaimer', () => {
+    // Both directions are asserted so the intent of the rule above is
+    // documented here rather than in a commit message. A substring ban would
+    // flag all four of these; a claim ban flags only the first two.
+    expect(claimsIn('skeleton_animate produces artist-quality animation.')).not.toEqual([]);
+    expect(claimsIn('The output is production-ready.')).not.toEqual([]);
+
+    expect(claimsIn('mechanically plausible placeholder motion, not artist quality')).toEqual([]);
+    expect(claimsIn('This is placeholder motion and is not production-ready.')).toEqual([]);
+  });
+
   it('states the placeholder-motion caveat next to the generator', () => {
     expect(POWER).toContain('mechanically plausible');
     expect(README).toContain('mechanically plausible');
+  });
+
+  it('mirrors the honesty sentence from its single source of truth', () => {
+    // The sentence lives once, in src/animation-templates.ts, and feeds the
+    // tool description, the tool summary and `_generator.note`. Reading it
+    // out of the source rather than hard-coding it here means editing the
+    // constant fails this test loudly instead of letting the documents drift
+    // away from what the tool actually prints — and makes copying the
+    // constant into a document the correct thing to do.
+    const source = read('src', 'animation-templates.ts');
+    const match = /export const PLACEHOLDER_MOTION_NOTE =\s*'([^']+)'/.exec(source);
+
+    expect(match).not.toBeNull();
+    const note = match![1]!;
+    expect(note).toContain('mechanically plausible placeholder motion');
+
+    // POWER.md and README.md reproduce it verbatim as English prose. The four
+    // translations explain it in their own language and quote the English
+    // sentence as the literal tool output, which is how every other tool
+    // string is handled in those files.
+    const missing = ['POWER.md', ...READMES].filter((file) => !read(file).includes(note));
+    expect(missing).toEqual([]);
   });
 
   it('names the document files and the fingerprint', () => {

@@ -106,7 +106,7 @@ Server 走 stdio、不開任何網路埠，因此沒有需要認證的監聽面�
 | 工具 | 做什麼 |
 |---|---|
 | `psd_to_skeleton` | 分層 PSD → 骨架 JSON + atlas + 頁面圖，並自動檢視與稽核結果 |
-| `skeleton_animate` | 以五個模板（`idle`、`walk`、`wave`、`jump`、`turn_head`）產生 Spine 4.2 動畫，寫進另一個 `-animated.json`。模板需要的骨骼若缺少，會直接失敗並列出這個 rig 實際有的骨骼，不會拿別的骨骼替代。這是機械上合理的占位動作，不是完稿動畫 — 線性 keyframe、沒有曲線調整、沒有次要動態、沒有重心轉移、沒有腳步固定。請在 Spine 編輯器中開啟後精修 |
+| `skeleton_animate` | 以五個模板（`idle`、`walk`、`wave`、`jump`、`turn_head`）產生 Spine 4.2 動畫，寫進另一個 `-animated.json`。模板需要的骨骼若缺少，會直接失敗並列出這個 rig 實際有的骨骼，不會拿別的骨骼替代。這是機械上合理的占位動作，達不到美術師手工調整的品質 — 線性 keyframe、沒有曲線調整、沒有次要動態、沒有重心轉移、沒有腳步固定。請在 Spine 編輯器中開啟後精修 |
 | `render_preview` | 用 spine-ts 在 headless Chromium 渲染動畫畫格 |
 | `visual_regression` | 與基準圖比對、輸出 diff 圖、失敗即擋 |
 | `preview_export_html` | 單一自帶所有資源的 HTML 檔，在任何瀏覽器裡播放骨架：播放／暫停、時間軸拖曳、動畫選單、速度、骨架除錯線。runtime、骨架、atlas 與頁面圖全部內嵌 —— 不需伺服器，也不向外抓取任何東西。把這個檔案交付出去需要你自己的 Spine 授權 |
@@ -182,7 +182,7 @@ Integration 測試在缺少 Spine 或 Chromium 時會自動略過，所以在乾
 | 匯出設定的欄位名稱 | 官方未公開。範本依匯出對話框的文件塑形，請用 `spine_export_settings_capture` 校正。`pack.json` 沒有這個問題。 |
 | 二進位 `.skel` 解析 | 目前不在範圍內，資料層讀 JSON 匯出。 |
 | Godot 整合 | 檔名規則與安裝路徑來自官方文件，但未對真實 Godot 專案跑過。 |
-| 把模板動畫當成完稿 | `skeleton_animate` 產生的是機械上合理的占位動作，不是完稿動畫：線性 keyframe、沒有曲線調整、沒有次要動態、沒有重心轉移、沒有腳步固定，也沒有 mesh 變形。請在 Spine 編輯器中開啟後精修。 |
+| 把模板動畫當成美術成品 | `skeleton_animate` 產生的是機械上合理的占位動作，達不到美術師手工調整的品質：線性 keyframe、沒有曲線調整、沒有次要動態、沒有重心轉移、沒有腳步固定，也沒有 mesh 變形。請在 Spine 編輯器中開啟後精修。工具本身輸出的原文是 `mechanically plausible placeholder motion, not artist quality — linear keyframes, no curve shaping, no secondary motion, no weight shift, no foot locking. Open it in the Spine editor to refine it.` |
 
 ## 授權
 

@@ -97,7 +97,7 @@ MCP 설정(`mcp.json`)에 등록합니다.
 | 도구 | 하는 일 |
 |---|---|
 | `psd_to_skeleton` | 레이어 PSD → 스켈레톤 JSON + atlas + 페이지 이미지. 생성 후 검사와 린트까지 수행 |
-| `skeleton_animate` | 다섯 가지 템플릿(`idle`, `walk`, `wave`, `jump`, `turn_head`)으로 Spine 4.2 애니메이션을 만들어 별도의 `-animated.json`에 씁니다. 템플릿이 요구하는 본이 없으면 다른 본으로 대체하지 않고 실패하며, 리그가 실제로 가진 본 이름을 알려줍니다. 이것은 기계적으로 그럴듯한 자리표시 모션이며 완성된 애니메이션이 아닙니다 — 선형 키프레임뿐이고 커브 조정, 2차 모션, 체중 이동, 발 고정이 없습니다. Spine 에디터에서 열어 다듬으세요 |
+| `skeleton_animate` | 다섯 가지 템플릿(`idle`, `walk`, `wave`, `jump`, `turn_head`)으로 Spine 4.2 애니메이션을 만들어 별도의 `-animated.json`에 씁니다. 템플릿이 요구하는 본이 없으면 다른 본으로 대체하지 않고 실패하며, 리그가 실제로 가진 본 이름을 알려줍니다. 이것은 기계적으로 그럴듯한 자리표시 모션이며 아티스트가 다듬은 품질이 아닙니다 — 선형 키프레임뿐이고 커브 조정, 2차 모션, 체중 이동, 발 고정이 없습니다. Spine 에디터에서 열어 다듬으세요 |
 | `render_preview` | 헤드리스 Chromium에서 spine-ts로 애니메이션 프레임 렌더링 |
 | `visual_regression` | 베이스라인과 비교하고 diff 이미지를 기록. 실패 시 게이트를 닫습니다 |
 | `preview_export_html` | 모든 것이 들어 있는 단일 HTML 파일. 어떤 브라우저에서도 스켈레톤을 재생하며 재생/일시정지, 타임라인 스크럽, 애니메이션 선택, 속도, 본 디버그 표시를 제공합니다. 런타임, 스켈레톤, atlas, 페이지 이미지가 모두 내장 — 서버도 외부 요청도 필요 없습니다. 이 파일을 배포하려면 자신의 Spine 라이선스가 필요합니다 |
@@ -173,7 +173,7 @@ uv run --project python pytest   # 66개 테스트
 | 내보내기 설정의 필드명 | 공개 문서가 없습니다. 템플릿은 내보내기 대화상자 문서를 바탕으로 만들었으므로 `spine_export_settings_capture`로 보정하세요. `pack.json`에는 이 문제가 없습니다. |
 | 바이너리 `.skel` 파싱 | 현재 범위 밖이며, 데이터 레이어는 JSON 내보내기를 읽습니다. |
 | Godot 통합 | 파일명 규칙과 설치 경로는 공식 문서에서 가져왔지만 실제 Godot 프로젝트에서는 실행하지 않았습니다. |
-| 템플릿 모션을 완성품으로 보는 것 | `skeleton_animate`가 쓰는 것은 기계적으로 그럴듯한 자리표시 모션이며 완성된 애니메이션이 아닙니다: 선형 키프레임, 커브 조정 없음, 2차 모션 없음, 체중 이동 없음, 발 고정 없음, 메시 디폼 없음. Spine 에디터에서 열어 다듬으세요. |
+| 템플릿 모션을 아티스트의 완성 작업과 동일하게 보는 것 | `skeleton_animate`가 쓰는 것은 기계적으로 그럴듯한 자리표시 모션이며 아티스트가 다듬은 품질이 아닙니다: 선형 키프레임, 커브 조정 없음, 2차 모션 없음, 체중 이동 없음, 발 고정 없음, 메시 디폼 없음. Spine 에디터에서 열어 다듬으세요. 도구가 실제로 출력하는 원문은 `mechanically plausible placeholder motion, not artist quality — linear keyframes, no curve shaping, no secondary motion, no weight shift, no foot locking. Open it in the Spine editor to refine it.` 입니다 |
 
 ## 라이선스
 

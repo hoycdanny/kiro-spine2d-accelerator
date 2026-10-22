@@ -210,7 +210,7 @@ and read the matching steering file before acting. Delete or rename the file to 
 | Tool | Purpose |
 |------|---------|
 | `psd_to_skeleton` | Layered PSD to skeleton JSON + atlas + page image, plus an `images/` folder of loose per-attachment PNGs next to the JSON, then inspect and lint the result. In that folder it manages only the PNGs it owns — anything else there is reported, never deleted. Runs through the Python sidecar. Works on a trial license; `spine_import` afterwards does not |
-| `skeleton_animate` | Generate `idle`, `walk`, `wave`, `jump` and `turn_head` animations into an exported rig and write the result as a second JSON file. Each template declares the bones it needs: a required bone missing means `VALIDATION_FAILED` naming the rig's actual bones and nothing written, because a substituted bone produces motion that looks like success; a missing optional bone drops only its own timelines and is reported. Existing animations survive and `skeleton.hash` is recomputed, with the algorithm named in the file. Pure data work — no editor, no license, no Python. Needs no Spine installation and no Python sidecar. This is mechanically plausible placeholder motion, not finished animation — linear keyframes, no curve shaping, no secondary motion, no weight shift, no foot locking. Open it in the Spine editor to refine it |
+| `skeleton_animate` | Generate `idle`, `walk`, `wave`, `jump` and `turn_head` animations into an exported rig and write the result as a second JSON file. Each template declares the bones it needs: a required bone missing means `VALIDATION_FAILED` naming the rig's actual bones and nothing written, because a substituted bone produces motion that looks like success; a missing optional bone drops only its own timelines and is reported. Existing animations survive and `skeleton.hash` is recomputed, with the algorithm named in the file. Pure data work — no editor, no license, no Python. Needs no Spine installation and no Python sidecar. This is mechanically plausible placeholder motion, not artist quality — linear keyframes, no curve shaping, no secondary motion, no weight shift, no foot locking. Open it in the Spine editor to refine it. |
 
 ### Group D — verification
 
@@ -353,7 +353,7 @@ system and OpenGL, so CI should export data and pack atlases only.
 6. `render_preview` on the output, sampling several times across the animation, to see it move.
 
 **Relay the caveat every time you offer `skeleton_animate`:** what it writes is mechanically
-plausible placeholder motion, not finished animation — linear keyframes, no curve shaping, no
+plausible placeholder motion, not artist quality — linear keyframes, no curve shaping, no
 secondary motion, no weight shift, no foot locking. Say so before the developer opens it, not
 after. It is a starting point to refine in the Spine editor, not a deliverable.
 

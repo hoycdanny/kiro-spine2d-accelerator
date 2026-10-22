@@ -91,7 +91,7 @@ Server 走 stdio、不开任何网络端口，因此没有需要认证的监听�
 | 工具 | 做什么 |
 |---|---|
 | `psd_to_skeleton` | 分层 PSD → 骨架 JSON + 图集 + 页面图，并自动检查与审核结果 |
-| `skeleton_animate` | 用五个模板（`idle`、`walk`、`wave`、`jump`、`turn_head`）生成 Spine 4.2 动画，写进另一个 `-animated.json`。模板需要的骨骼若缺失，会直接失败并列出该 rig 实际拥有的骨骼，不会拿别的骨骼替代。这是机械上合理的占位动作，不是成品动画 — 线性 keyframe、没有曲线调整、没有次级动态、没有重心转移、没有脚步锁定。请在 Spine 编辑器中打开后细修 |
+| `skeleton_animate` | 用五个模板（`idle`、`walk`、`wave`、`jump`、`turn_head`）生成 Spine 4.2 动画，写进另一个 `-animated.json`。模板需要的骨骼若缺失，会直接失败并列出该 rig 实际拥有的骨骼，不会拿别的骨骼替代。这是机械上合理的占位动作，达不到美术师手工打磨的品质 — 线性 keyframe、没有曲线调整、没有次级动态、没有重心转移、没有脚步锁定。请在 Spine 编辑器中打开后细修 |
 | `render_preview` | 用 spine-ts 在 headless Chromium 渲染动画帧 |
 | `visual_regression` | 与基准图比对、输出 diff 图、失败即拦 |
 | `preview_export_html` | 单个自带全部资源的 HTML 文件，在任意浏览器里播放骨架：播放／暂停、时间轴拖动、动画选择、速度、骨骼调试线。runtime、骨架、图集与页面图全部内嵌 —— 不需要服务器，也不向外请求任何东西。分发这个文件需要你自己的 Spine 授权 |
@@ -167,7 +167,7 @@ Integration 测试在缺少 Spine 或 Chromium 时会自动跳过，所以在干
 | 导出设置的字段名 | 官方未公开。模板依导出对话框的文档塑形，请用 `spine_export_settings_capture` 校正。`pack.json` 没有这个问题。 |
 | 二进制 `.skel` 解析 | 目前不在范围内，数据层读 JSON 导出。 |
 | Godot 集成 | 文件名规则与安装路径来自官方文档，但未对真实 Godot 项目运行过。 |
-| 把模板动画当成成品 | `skeleton_animate` 生成的是机械上合理的占位动作，不是成品动画：线性 keyframe、没有曲线调整、没有次级动态、没有重心转移、没有脚步锁定，也没有 mesh 变形。请在 Spine 编辑器中打开后细修。 |
+| 把模板动画当成美术成品 | `skeleton_animate` 生成的是机械上合理的占位动作，达不到美术师手工打磨的品质：线性 keyframe、没有曲线调整、没有次级动态、没有重心转移、没有脚步锁定，也没有 mesh 变形。请在 Spine 编辑器中打开后细修。工具本身输出的原文是 `mechanically plausible placeholder motion, not artist quality — linear keyframes, no curve shaping, no secondary motion, no weight shift, no foot locking. Open it in the Spine editor to refine it.` |
 
 ## 授权
 

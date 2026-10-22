@@ -474,7 +474,17 @@ describe('the payload stays small whatever the rig does', () => {
     });
 
     // The bound is a property of the payload's shape, not of this fixture.
-    expect(JSON.stringify(bulky).length).toBe(JSON.stringify(plain).length);
+    //
+    // `probe.elapsedMs` is the one field in the payload that is a wall-clock
+    // measurement, so two otherwise identical payloads differ by a character
+    // whenever the two runs land on either side of a digit boundary (99 ms
+    // versus 100 ms). That made this assertion fail under full-suite load
+    // while passing in isolation, so the timing is normalised and everything
+    // else is still compared byte for byte.
+    const sameLengthIgnoringTiming = (result: typeof plain): number =>
+      JSON.stringify(result).replace(/"elapsedMs":\d+/g, '"elapsedMs":0').length;
+
+    expect(sameLengthIgnoringTiming(bulky)).toBe(sameLengthIgnoringTiming(plain));
 
     // The document itself caps the two keyframe lists and says how many
     // it left out.
