@@ -130,6 +130,14 @@ window.__spineInteractiveViewer = async function (input) {
     disableControls();
   }
 
+  // The one failure path. Published before the first await so the
+  // bootstrap's .catch can reach it: statements outside a guarded block —
+  // the atlas page texture upload, the <option> population, the first
+  // syncTimeline() — reject the returned promise instead of calling fail()
+  // here, and without this they would leave the strip enabled and reading
+  // "Pause" under a red error line.
+  window.__spineViewerFail = fail;
+
   canvas.width = input.width;
   canvas.height = input.height;
 
@@ -562,14 +570,12 @@ export function buildInteractiveHtml(
 window.__spineInteractiveViewer(${embedJson(input)}).catch(function (cause) {
   // The viewer is async, so without this a failure past the skeleton load
   // would be an unhandled rejection: a page stuck on "Loading…" and no
-  // message for whoever opened it.
-  var message = 'The viewer failed to start: ' + cause;
-  window.__spineViewerError = message;
-  var status = document.getElementById('viewer-status');
-  if (status) {
-    status.textContent = message;
-    status.className = 'status failed';
-  }
+  // message for whoever opened it. It reports through the viewer's own
+  // fail(), which also shuts the control strip down — writing the status
+  // line here instead was the one path that left the strip live.
+  // __spineViewerFail is assigned synchronously before the viewer's first
+  // await, so it exists for any rejection this can see.
+  window.__spineViewerFail('The viewer failed to start: ' + cause);
 });
 </script>
 </body>

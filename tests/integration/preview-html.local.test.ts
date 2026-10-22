@@ -8,7 +8,7 @@
  * Skips itself when Chromium is unavailable, like the other local
  * integration tests.
  */
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -25,7 +25,10 @@ import { RgbaImage, decodePng, encodePng, pixelDifference, solidImage } from '..
  * lets them survive a function being serialized into the page.
  */
 interface PageGlobals {
-  document: { getElementById(id: string): unknown };
+  document: {
+    getElementById(id: string): unknown;
+    querySelector(selector: string): unknown;
+  };
   Event: new (type: string, init?: { bubbles?: boolean }) => unknown;
   __spineViewerReady?: boolean;
   __spineViewerError?: string;
@@ -33,6 +36,17 @@ interface PageGlobals {
 type PageCanvas = { toDataURL(type: string): string };
 type PageSelect = { options: ArrayLike<{ value: string }> };
 type PageRange = { value: string; max: string; dispatchEvent(event: unknown): boolean };
+type PageControl = {
+  id: string;
+  disabled: boolean;
+  textContent: string | null;
+  className: string;
+  getAttribute(name: string): string | null;
+};
+type PageStrip = {
+  textContent: string | null;
+  querySelectorAll(selector: string): ArrayLike<unknown>;
+};
 
 /** The Playwright page members this test uses, beyond the renderer's subset. */
 interface RichPage {
@@ -181,6 +195,115 @@ describe('standalone interactive preview', () => {
 
       expect(pixelDifference(atStart, midway)).toBeGreaterThan(0.01);
       expect(pageErrors).toEqual([]);
+    } finally {
+      await browser.close();
+    }
+  }, 180_000);
+
+  it('shows the error and shuts the controls down when the viewer throws', async () => {
+    if (!available) {
+      // Chromium is not installed on this machine; nothing to verify.
+      return;
+    }
+
+    const host = createNodeHost({ workspaceRoot: workspace });
+    const exported = exportInteractivePreview(host, {
+      skeleton: join(workspace, 'hero.json'),
+      atlas: join(workspace, 'hero.atlas'),
+      output: 'standalone/hero.html',
+      animation: 'spin',
+      width: 160,
+      height: 160,
+    });
+
+    expect(exported.ok ? 'ok' : exported.message).toBe('ok');
+    if (!exported.ok) return;
+
+    // Break the texture upload, which is the real unguarded statement:
+    // `page.setTexture(...)` runs after the atlas page loop's try/catch
+    // ends, so it rejects the viewer's promise instead of reaching a
+    // fail() site. The stub goes in its own script element between the
+    // viewer and the bootstrap, leaving both of them exactly as shipped.
+    // It patches the prototype rather than `spine.GLTexture`, because the
+    // bundle's exports are getter-only and assigning to one is a silent
+    // no-op.
+    const html = readFileSync(exported.data.outputFile, 'utf8');
+    const broken = html.replace(
+      '</script>\n<script>\nwindow.__spineInteractiveViewer(',
+      '</script>\n<script>spine.TextureAtlasPage.prototype.setTexture = function () { throw new Error("texture upload refused"); };</script>\n<script>\nwindow.__spineInteractiveViewer(',
+    );
+    expect(broken).not.toBe(html);
+
+    const brokenFile = join(workspace, 'standalone', 'hero-broken.html');
+    writeFileSync(brokenFile, broken, 'utf8');
+
+    const browser = await createPlaywrightLauncher()();
+    const pageErrors: string[] = [];
+
+    try {
+      const page = (await browser.newPage()) as unknown as RichPage;
+      page.on('pageerror', (payload) => pageErrors.push(String(payload)));
+
+      await page.goto(pathToFileURL(brokenFile).href, { waitUntil: 'load' });
+      await page.waitForFunction(
+        () =>
+          typeof (globalThis as unknown as PageGlobals).__spineViewerError === 'string',
+        undefined,
+        { timeout: 60_000 },
+      );
+
+      const state = await page.evaluate(() => {
+        const globals = globalThis as unknown as PageGlobals;
+        const strip = globals.document.querySelector('.controls') as PageStrip;
+        const nodes = strip.querySelectorAll('button, select, input');
+        const controls: Array<{
+          id: string;
+          disabled: boolean;
+          pressed: string | null;
+          text: string;
+        }> = [];
+        for (let index = 0; index < nodes.length; index++) {
+          const control = nodes[index] as PageControl;
+          controls.push({
+            id: control.id,
+            disabled: control.disabled,
+            pressed: control.getAttribute('aria-pressed'),
+            text: control.textContent ?? '',
+          });
+        }
+        const status = globals.document.getElementById('viewer-status') as PageControl;
+        return {
+          error: globals.__spineViewerError ?? null,
+          ready: globals.__spineViewerReady === true,
+          status: status.textContent ?? '',
+          statusClass: status.className,
+          stripText: strip.textContent ?? '',
+          controls,
+        };
+      });
+
+      // The rejection is reported, not swallowed, and not left unhandled.
+      expect(state.ready).toBe(false);
+      expect(state.error).toContain('The viewer failed to start');
+      expect(state.error).toContain('texture upload refused');
+      expect(state.status).toBe(state.error);
+      expect(state.statusClass).toContain('failed');
+      expect(pageErrors).toEqual([]);
+
+      // And the strip is honest about it: nothing clickable, nothing
+      // claiming to be playing.
+      expect(state.controls.map((control) => control.id).sort()).toEqual([
+        'animation-select',
+        'bones-toggle',
+        'loop-toggle',
+        'play-toggle',
+        'speed-select',
+        'timeline',
+      ]);
+      expect(state.controls.filter((control) => !control.disabled)).toEqual([]);
+      expect(state.controls.filter((control) => control.pressed === 'true')).toEqual([]);
+      expect(state.stripText).not.toContain('Pause');
+      expect(state.stripText).toContain('Play');
     } finally {
       await browser.close();
     }
