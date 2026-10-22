@@ -1,4 +1,4 @@
-# 데모 — 2분, 9단계
+# 데모 — 2분, 10단계
 
 [English](README.md) · [繁體中文](README_ZH.md) · [简体中文](README_CN.md) · [日本語](README_JP.md)
 
@@ -21,12 +21,13 @@ uv sync --project python          # 2단계, PSD 부분
 npx playwright install chromium   # 5~7단계, 비주얼 부분
 ```
 
-워밍업된 머신에서 약 5초입니다. 끝나면 이 세 폴더를 여세요. 데모의 핵심입니다.
+워밍업된 머신에서 약 5초입니다. 끝나면 이것들을 여세요. 데모의 핵심입니다.
 
 ```
 demo/out/generated/images/  어태치먼트별 개별 PNG — File -> Import Data가 참조하는 대상
 demo/out/preview/           애니메이션 렌더링 4프레임
 demo/out/regression-diff/   atlas 3픽셀 이동을 잡아낸 diff 이미지
+demo/out/preview/hero.html  더블클릭만 하면 됩니다. 어떤 브라우저에서도 재생되고 서버가 필요 없습니다
 ```
 
 ## 단계별로 할 말
@@ -42,6 +43,7 @@ demo/out/regression-diff/   atlas 3픽셀 이동을 잡아낸 diff 이미지
 | 7. 일부러 깨뜨리기 | 4/4 프레임 FAIL, 픽셀 수와 diff 이미지 | "atlas 영역 하나를 3픽셀 옮겼습니다. 스켈레톤 데이터는 전혀 바뀌지 않았습니다. 비주얼 검사만 잡아낼 수 있습니다." |
 | 8. Unity 스캐폴드 | `hero.atlas → hero.atlas.txt`, mix 테이블, 컨트롤러 | "spine-unity는 순수 `.atlas`를 로드할 수 없습니다. 이 규칙은 누군가의 기억이 아니라 도구 안에 있습니다." |
 | 9. 라이선스 경계 | `CAPABILITY_DENIED`와 실행하려던 명령줄 | "trial에서는 거부합니다. 그리고 실행하려던 명령을 그대로 건네주니, 구매 후 똑같이 다시 실행하면 됩니다." |
+| 10. 고객에게 건넬 파일 하나 | `demo/out/preview/hero.html`, 약 236 KB | "더블클릭해 보세요. 런타임, 스켈레톤, atlas, 이미지가 모두 이 파일 하나에 들어 있습니다. 서버도 설치도 필요 없고 외부에서 아무것도 받아오지 않습니다. 타임라인을 끌어 보세요. 단, Spine Runtimes를 내장하므로 누군가에게 건네려면 본인의 Spine 라이선스가 필요합니다." |
 
 ## 라이브로 보여주기
 

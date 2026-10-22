@@ -1,4 +1,4 @@
-# デモ — 2 分、9 ステップ
+# デモ — 2 分、10 ステップ
 
 [English](README.md) · [繁體中文](README_ZH.md) · [简体中文](README_CN.md) · [한국어](README_KR.md)
 
@@ -21,12 +21,13 @@ uv sync --project python          # ステップ 2、PSD の部分
 npx playwright install chromium   # ステップ 5〜7、ビジュアルの部分
 ```
 
-ウォーム状態で約 5 秒です。終わったらこの 3 つのフォルダを開いてください。これがデモの中心です。
+ウォーム状態で約 5 秒です。終わったらこれらを開いてください。これがデモの中心です。
 
 ```
 demo/out/generated/images/  アタッチメントごとの個別 PNG — File -> Import Data はこれを参照します
 demo/out/preview/           アニメーションのレンダリング 4 フレーム
 demo/out/regression-diff/   atlas の 3 ピクセルずれを捕まえた差分画像
+demo/out/preview/hero.html  ダブルクリックするだけ。どのブラウザでも再生され、サーバーは不要です
 ```
 
 ## 各ステップで話すこと
@@ -42,6 +43,7 @@ demo/out/regression-diff/   atlas の 3 ピクセルずれを捕まえた差分�
 | 7. わざと壊す | 4/4 フレームが FAIL、ピクセル数と差分画像付き | 「atlas の領域を 3 ピクセル動かしました。スケルトンデータは一切変わっていません。ビジュアル検査だけが捕まえられます。」 |
 | 8. Unity スキャフォールド | `hero.atlas → hero.atlas.txt`、mix テーブル、コントローラー | 「spine-unity は素の `.atlas` を読み込めません。このルールは誰かの記憶ではなくツールに入っています。」 |
 | 9. ライセンス境界 | `CAPABILITY_DENIED` と実行予定だったコマンドライン | 「trial では拒否します。そして実行しようとしたコマンドを返すので、購入後にそのまま再実行できます。」 |
+| 10. 顧客に渡せる 1 ファイル | `demo/out/preview/hero.html`、約 236 KB | 「ダブルクリックしてください。ランタイム、スケルトン、atlas、画像がすべてこの 1 ファイルに入っています。サーバーもインストールも不要で、外部から何も取得しません。タイムラインをドラッグできます。ただし Spine Runtimes を埋め込んでいるので、誰かに渡すには自分の Spine ライセンスが必要です。」 |
 
 ## ライブで見せる場合
 

@@ -1,8 +1,10 @@
 // ============================================================
-// Group D — `render_preview`.
+// Group D — `render_preview` and `preview_export_html`.
 //
 // Loads an exported skeleton plus its atlas, renders chosen moments of an
-// animation in headless Chromium, and writes PNGs.
+// animation in headless Chromium, and writes PNGs. `preview_export_html`
+// shares the same inputs but needs no browser: it writes one self-contained
+// HTML file that plays the skeleton wherever it is opened.
 //
 // Division of labour worth keeping straight: Spine's own image/video export
 // is the authoritative visual output but needs a windowing system and
@@ -11,17 +13,25 @@
 // ============================================================
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { z } from 'zod';
 
 import { AtlasReport, inspectAtlasText } from '../atlas-data';
 import { SpineHost } from '../host';
+import {
+  InteractivePageInput,
+  LICENSE_SENTENCE,
+  PURCHASE_URL,
+  buildInteractiveHtml,
+} from '../interactive-preview-page';
 import { resolveReadTarget, resolveWriteTarget } from '../path-safety';
 import {
   BrowserLauncher,
   RenderResult,
   createPlaywrightLauncher,
+  loadRuntimeSource,
   renderFrames,
+  toDataUrl,
 } from '../preview-renderer';
 import { SkeletonReport, inspectSkeletonJson } from '../skeleton-data';
 import { guardTool } from '../tool-result';
@@ -268,6 +278,133 @@ export async function renderPreview(
   );
 }
 
+/** Payload returned by `preview_export_html`. */
+export interface ExportInteractivePreviewData {
+  skeletonFile: string;
+  atlasFile: string;
+  outputFile: string;
+  /** Size of the written HTML file. */
+  bytes: number;
+  /** Animation selected on load. */
+  animation: string | null;
+  animations: string[];
+  skins: string[];
+  /** Atlas page image names embedded in the file. */
+  pages: string[];
+  spineVersion: string | null;
+}
+
+/** Arguments accepted by `preview_export_html`. */
+export interface ExportInteractivePreviewRequest {
+  skeleton: string;
+  atlas: string;
+  output: string;
+  imageDir?: string | undefined;
+  animation?: string | undefined;
+  skin?: string | undefined;
+  width?: number | undefined;
+  height?: number | undefined;
+  scale?: number | undefined;
+  premultipliedAlpha?: boolean | undefined;
+  background?: [number, number, number, number] | undefined;
+  title?: string | undefined;
+  showBones?: boolean | undefined;
+}
+
+/**
+ * Write one self-contained HTML file that plays the skeleton.
+ *
+ * No browser is involved: this only reads the runtime bundle and the
+ * exported data, so it works on a machine where Chromium is absent. The
+ * HTML itself is never returned in the payload — it is hundreds of
+ * kilobytes, and the result envelope inlines detail up to
+ * `MAX_INLINE_DETAIL_CHARS`.
+ */
+export function exportInteractivePreview(
+  host: SpineHost,
+  args: ExportInteractivePreviewRequest,
+): SpineResult<ExportInteractivePreviewData> {
+  const skeletonFile = readTextFile(host, args.skeleton, 'skeleton data');
+  if (!skeletonFile.ok) return skeletonFile;
+
+  const skeleton = inspectSkeletonJson(skeletonFile.data.text);
+  if (!skeleton.ok) return skeleton;
+
+  const atlasFile = readTextFile(host, args.atlas, 'texture atlas');
+  if (!atlasFile.ok) return atlasFile;
+
+  const atlas = inspectAtlasText(atlasFile.data.text);
+  if (!atlas.ok) return atlas;
+
+  let imageDir: string | undefined;
+  if (args.imageDir) {
+    const resolved = resolveReadTarget(args.imageDir, host.workspaceRoot, host.exists);
+    if (!resolved.ok) return resolved;
+    imageDir = resolved.data;
+  }
+
+  const images = loadAtlasImages(host, atlasFile.data.absolute, atlas.data, imageDir);
+  if (!images.ok) return images;
+
+  const animation = pickAnimation(args.animation, skeleton.data);
+  if (!animation.ok) return animation;
+
+  const runtime = loadRuntimeSource(host);
+  if (!runtime.ok) return runtime;
+
+  const target = resolveWriteTarget(args.output, host.workspaceRoot);
+  if (!target.ok) return target;
+
+  const input: InteractivePageInput = {
+    skeletonJson: skeletonFile.data.text,
+    atlasText: atlasFile.data.text,
+    images: Object.fromEntries(
+      Object.entries(images.data).map(([name, png]) => [name, toDataUrl(png)]),
+    ),
+    animation: animation.data,
+    skin: args.skin ?? null,
+    // A pma mismatch is the usual cause of dark or haloed edges, so follow
+    // what the atlas declares unless the caller insists otherwise.
+    premultipliedAlpha:
+      args.premultipliedAlpha ?? atlas.data.pages.some((page) => page.pma),
+    scale: args.scale ?? 1,
+    background: args.background ?? [0, 0, 0, 0],
+    width: args.width ?? 512,
+    height: args.height ?? 512,
+    title: args.title ?? basename(skeletonFile.data.absolute),
+    showBones: args.showBones ?? false,
+  };
+
+  const html = buildInteractiveHtml(runtime.data, input);
+  host.writeText(target.data, html);
+
+  const bytes = Buffer.byteLength(html, 'utf8');
+  const animations = skeleton.data.animations.map((entry) => entry.name);
+
+  const summaryLines = [
+    `Wrote ${target.data} (${Math.round(bytes / 1024)} KB).`,
+    'It opens in any browser by double-clicking it: no server, no install, and nothing is fetched — the runtime, the skeleton, the atlas and every page image are embedded in the file.',
+    `Controls: play/pause, a timeline scrub, an animation selector (${animations.length > 0 ? animations.join(', ') : 'setup pose only'}), speed and a debug-bones toggle.`,
+    `Opens on ${animation.data ?? 'the setup pose'} at ${input.width}x${input.height}, premultiplied alpha ${input.premultipliedAlpha}.`,
+    LICENSE_SENTENCE,
+  ];
+
+  return ok(
+    {
+      skeletonFile: skeletonFile.data.absolute,
+      atlasFile: atlasFile.data.absolute,
+      outputFile: target.data,
+      bytes,
+      animation: animation.data,
+      animations,
+      skins: skeleton.data.skins.names,
+      pages: Object.keys(images.data),
+      spineVersion: skeleton.data.meta.spineVersion,
+    },
+    summaryLines.join('\n'),
+  );
+}
+
 /** Choose and validate the animation to render. */
 function pickAnimation(
   requested: string | undefined,
@@ -372,6 +509,81 @@ export function registerPreviewTools(
     async (args) =>
       guardTool(() =>
         renderPreview(host, launcher, {
+          ...args,
+          background: args.background as
+            | [number, number, number, number]
+            | undefined,
+        }),
+      ),
+  );
+
+  server.registerTool(
+    'preview_export_html',
+    {
+      title: 'Export a standalone interactive preview',
+      description: [
+        'Write ONE self-contained HTML file that plays the skeleton in any browser, with play/pause, a timeline scrub, an animation selector, a speed control and a debug-bones toggle.',
+        'The spine-webgl runtime, the skeleton JSON, the atlas text and every atlas page image are embedded as data URLs, so the file needs no server, no install and no network — which is what makes it safe to hand to someone who has neither Spine nor this Power.',
+        'Needs no browser to produce, so it works where Chromium is absent; it does need the optional spine-webgl dependency, because that bundle is what gets embedded.',
+        'Get the paths wrong and you ship a page that silently renders nothing: the atlas page images are read from beside the .atlas unless `imageDir` says otherwise, and a missing one fails here rather than in the client\'s browser.',
+        `Distributing the generated file requires your own Spine license: ${PURCHASE_URL}`,
+      ].join(' '),
+      inputSchema: {
+        skeleton: z.string().describe('Path to the exported skeleton JSON file.'),
+        atlas: z.string().describe('Path to the matching .atlas file.'),
+        output: z
+          .string()
+          .describe('Path of the HTML file to write, inside the workspace, e.g. "preview/hero.html".'),
+        imageDir: z
+          .string()
+          .optional()
+          .describe('Folder holding the atlas page images. Defaults to the atlas folder.'),
+        animation: z
+          .string()
+          .optional()
+          .describe('Animation selected when the page opens. Defaults to the first one in the skeleton.'),
+        skin: z.string().optional().describe('Skin to apply before rendering.'),
+        width: z
+          .number()
+          .int()
+          .min(16)
+          .max(4096)
+          .optional()
+          .describe('Canvas width in pixels. Defaults to 512.'),
+        height: z
+          .number()
+          .int()
+          .min(16)
+          .max(4096)
+          .optional()
+          .describe('Canvas height in pixels. Defaults to 512.'),
+        scale: z
+          .number()
+          .positive()
+          .optional()
+          .describe('Skeleton scale applied at load time. Defaults to 1.'),
+        premultipliedAlpha: z
+          .boolean()
+          .optional()
+          .describe('Override the atlas pma flag. Only do this when the runtime deliberately disagrees with the atlas.'),
+        background: z
+          .tuple([z.number().min(0).max(1), z.number().min(0).max(1), z.number().min(0).max(1), z.number().min(0).max(1)])
+          .optional()
+          .describe('Canvas background as [r, g, b, a], each 0..1. Defaults to transparent over a checkerboard.'),
+        title: z
+          .string()
+          .optional()
+          .describe('Heading and document title. Defaults to the skeleton file name.'),
+        showBones: z
+          .boolean()
+          .optional()
+          .describe('Start with the debug-bones overlay on. Defaults to false.'),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+    },
+    async (args) =>
+      guardTool(() =>
+        exportInteractivePreview(host, {
           ...args,
           background: args.background as
             | [number, number, number, number]

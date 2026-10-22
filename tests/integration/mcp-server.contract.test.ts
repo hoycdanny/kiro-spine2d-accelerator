@@ -99,6 +99,7 @@ const EXPECTED_TOOLS = [
   'psd_to_skeleton',
   // D — verification
   'render_preview',
+  'preview_export_html',
   'visual_regression',
   // E — integration
   'runtime_scaffold',

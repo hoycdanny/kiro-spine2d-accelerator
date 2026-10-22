@@ -16,6 +16,7 @@ remembers to check.
 |---|---|
 | Spine's own image/video export (CLI `-e` with an image class) | **Authoritative output.** What ships to marketing, or into a sprite sheet. Needs an OS windowing system and OpenGL, so it is fragile on CI runners. |
 | `render_preview` / `visual_regression` (spine-ts in headless Chromium) | **Automation.** Reproducible, runs without a desktop session, and is the input to regression. Not a substitute for the authoritative output. |
+| `preview_export_html` (spine-ts embedded in one HTML file) | **Showing it to a person.** Interactive, opens anywhere, needs no server and no Chromium to produce. Not an automation gate: nothing compares its output. |
 
 Say which one you used. A developer comparing a regression PNG against a marketing render will
 otherwise assume they should be identical.
@@ -100,6 +101,29 @@ skeleton_diff(from: baselineExport, to: newExport)
 visual_regression(skeleton, atlas, baselineDir: "baseline/walk", animation: "walk",
                   times: [0, 0.25, 0.5, 0.75], diffDir: "regression/walk")
 ```
+
+## The standalone interactive file
+
+```
+preview_export_html(skeleton, atlas, output: "preview/hero.html", animation: "walk",
+                    width: 480, height: 480)
+```
+
+One HTML file with the spine-webgl runtime, the skeleton JSON, the atlas text and every atlas page
+image inlined as data URLs. Consequences worth stating when you offer it:
+
+- **No server and no install.** Nothing is fetched, so `file://` works and CORS never applies. This
+  is what makes it safe to email or hand over on a USB stick.
+- **No browser needed to produce it.** Only the runtime file and the exported data are read, so it
+  works on a machine without Chromium — unlike `render_preview`.
+- **It is not a baseline.** The page is interactive and frame timing depends on the viewer's
+  machine. Keep gating on `visual_regression`.
+- **Distribution requires a Spine license.** The file embeds the Spine Runtimes, so handing it to a
+  client is distributing them: https://esotericsoftware.com/spine-purchase . The page states this
+  in its footer and in an HTML comment, but say it out loud as well.
+
+Seeking inside the page re-poses from the setup pose in fixed 1/60 steps, the same approach the
+headless renderer uses, so a scrubbed frame lands where a runtime playing from the start would.
 
 ## Diagnosing a blank or wrong render
 

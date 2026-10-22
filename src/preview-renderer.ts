@@ -138,7 +138,8 @@ export interface RenderResult {
   height: number;
 }
 
-function toDataUrl(png: Buffer): string {
+/** Exported because the interactive HTML export inlines pages the same way. */
+export function toDataUrl(png: Buffer): string {
   return `data:image/png;base64,${png.toString('base64')}`;
 }
 

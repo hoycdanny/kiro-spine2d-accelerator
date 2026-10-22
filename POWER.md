@@ -199,6 +199,7 @@ and read the matching steering file before acting. Delete or rename the file to 
 |------|---------|
 | `render_preview` | Render chosen moments of an animation with spine-ts in headless Chromium and write PNGs. Fixed-step time advance and a single camera framing make the output reproducible |
 | `visual_regression` | Compare a fresh render against baseline PNGs, write diff images, fail as `GATE_FAILED`. Baselines are bound to the skeleton hash |
+| `preview_export_html` | Write ONE self-contained HTML file that plays the skeleton in any browser — play/pause, timeline scrub, animation selector, speed, debug bones. The runtime, the skeleton, the atlas and every page image are embedded as data URLs, so there is no server and nothing is fetched. Needs no browser to produce. Distributing the file requires your own Spine license |
 
 ### Group E — integration
 
@@ -286,6 +287,13 @@ files entirely. Pass a settings file, or pack separately with `spine_pack`.
 Role split: Spine's own image/video export is the authoritative visual output, and it needs a
 windowing system plus OpenGL. The headless renderer here is the automation path.
 
+**Show it to a client**: when someone wants to *see* the animation rather than gate it, use
+`preview_export_html` instead of sending PNGs. It writes one HTML file with everything embedded —
+no server, no install, nothing fetched — so it survives being emailed or dropped on a shared drive.
+It needs no browser to produce, so it also works where Chromium is absent. Say the licence fact
+when you hand the file over: it embeds the Spine Runtimes, and distributing it requires your own
+Spine license (https://esotericsoftware.com/spine-purchase).
+
 ### Workflow 5: Runtime integration
 
 **"Get this into my Unity project."**
@@ -306,10 +314,12 @@ system and OpenGL, so CI should export data and pack atlases only.
 
 ## Demo
 
-`npm run demo` runs a scripted, self-narrating path through nine steps against the real server:
+`npm run demo` runs a scripted, self-narrating path through ten steps against the real server:
 environment probe, PSD to rig, inspect and lint, semantic diff of an animator's change, headless
-render, visual baseline, a deliberately broken atlas caught with a diff image, Unity scaffold, and
-the licensing refusal. It works on a trial license and writes only into `demo/out/`.
+render, visual baseline, a deliberately broken atlas caught with a diff image, Unity scaffold,
+the licensing refusal, and a standalone interactive HTML page at `demo/out/preview/hero.html` that
+a client can open with no server and no install. It works on a trial license and writes only into
+`demo/out/`.
 
 When a developer asks for a demonstration, run that rather than improvising: it is reproducible,
 and `demo/README.md` carries the narration for each step in five languages.

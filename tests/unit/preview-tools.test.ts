@@ -10,6 +10,7 @@ import {
 import {
   DEFAULT_SAMPLE_COUNT,
   evenSampleTimes,
+  exportInteractivePreview,
   frameFileName,
   loadAtlasImages,
   renderPreview,
@@ -283,5 +284,113 @@ describe('renderPreview', () => {
       atlas: 'export/hero.atlas',
     });
     expect(!result.ok && result.code).toBe(SpineErrorCode.InputMissing);
+  });
+});
+
+// Deliberately no launcher anywhere below: generating the standalone page
+// needs the runtime file and the exported data, nothing else. That is what
+// makes it usable on a machine without Chromium.
+describe('exportInteractivePreview', () => {
+  const ARGS = {
+    skeleton: 'export/hero.json',
+    atlas: 'export/hero.atlas',
+    output: 'preview/hero.html',
+  };
+
+  it('writes exactly one HTML file at the resolved path', () => {
+    const host = previewHost();
+    const result = exportInteractivePreview(host, ARGS);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.outputFile).toBe('C:\\work\\project\\preview\\hero.html');
+    expect(Object.keys(host.writes)).toEqual(['C:\\work\\project\\preview\\hero.html']);
+    expect(Object.keys(host.binaryWrites)).toEqual([]);
+  });
+
+  it('reports what it embedded, without the HTML itself', () => {
+    const host = previewHost();
+    const result = exportInteractivePreview(host, ARGS);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.animation).toBe('spin');
+    expect(result.data.animations).toEqual(['spin']);
+    expect(result.data.skins).toEqual(['default']);
+    expect(result.data.pages).toEqual(['fixture.png']);
+    expect(result.data.spineVersion).toBe('4.2.37');
+    // The runtime alone is over 200 KB, so a small file means it is missing.
+    expect(result.data.bytes).toBeGreaterThan(200_000);
+    expect(JSON.stringify(result.data)).not.toContain('<!DOCTYPE html>');
+  });
+
+  it('embeds the runtime, the data and the page image in the written file', () => {
+    const host = previewHost();
+    const result = exportInteractivePreview(host, ARGS);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const html = host.writes[result.data.outputFile]!;
+    expect(html).toContain('data:image/png;base64,');
+    expect(html).toContain('bounds: 0, 0, 64, 64');
+    expect(html).toContain('id="timeline"');
+  });
+
+  it('says in the summary that it needs no server, and names the licence', () => {
+    const host = previewHost();
+    const result = exportInteractivePreview(host, ARGS);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.summary).toContain('spine-purchase');
+    expect(result.summary).toContain('no server');
+    expect(result.summary).toContain('KB');
+  });
+
+  it('refuses an output path outside the workspace', () => {
+    const host = previewHost();
+    const result = exportInteractivePreview(host, { ...ARGS, output: '../escape' });
+    expect(!result.ok && result.code).toBe(SpineErrorCode.PathNotAllowed);
+  });
+
+  it('reports a missing atlas page image rather than writing a blank page', () => {
+    const host = createFakeHost({
+      files: {
+        [SKELETON]: toJsonText(RENDERABLE_SKELETON),
+        [ATLAS]: RENDERABLE_ATLAS,
+        [RUNTIME_PATH]: RUNTIME_SOURCE,
+      },
+    });
+    const result = exportInteractivePreview(host, ARGS);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe(SpineErrorCode.InputMissing);
+    expect(result.hint).toContain('imageDir');
+    expect(Object.keys(host.writes)).toEqual([]);
+  });
+
+  it('reports a missing spine-webgl install as a dependency problem', () => {
+    const host = createFakeHost({
+      files: { [SKELETON]: toJsonText(RENDERABLE_SKELETON), [ATLAS]: RENDERABLE_ATLAS },
+      binaries: { [PAGE]: PNG },
+      packageRoot: 'C:\\nowhere',
+    });
+    const result = exportInteractivePreview(host, ARGS);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe(SpineErrorCode.DependencyMissing);
+    expect(result.hint).toContain('spine-webgl');
+  });
+
+  it('rejects an animation that does not exist and lists the real ones', () => {
+    const host = previewHost();
+    const result = exportInteractivePreview(host, { ...ARGS, animation: 'nope' });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe(SpineErrorCode.InvalidArgument);
+    expect(result.hint).toContain('spin');
   });
 });

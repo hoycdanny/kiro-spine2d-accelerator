@@ -1,4 +1,4 @@
-# Demo — 两分钟，九个步骤
+# Demo — 两分钟，十个步骤
 
 [English](README.md) · [繁體中文](README_ZH.md) · [日本語](README_JP.md) · [한국어](README_KR.md)
 
@@ -20,12 +20,13 @@ uv sync --project python          # 第 2 步，PSD 那段
 npx playwright install chromium   # 第 5–7 步，视觉那段
 ```
 
-热机状态约 5 秒跑完。然后打开这三个目录 —— 它们就是 demo 的重点：
+热机状态约 5 秒跑完。然后打开这几个产物 —— 它们就是 demo 的重点：
 
 ```
 demo/out/generated/images/  每个 attachment 一张散图 PNG —— File -> Import Data 就是对着它们解析
 demo/out/preview/           动画的四张渲染帧
 demo/out/regression-diff/   抓到图集位移 3 像素的 diff 图
+demo/out/preview/hero.html  直接双击：动画会在任何浏览器里播放，不需要搭服务器
 ```
 
 ## 每一步该说什么
@@ -41,6 +42,7 @@ demo/out/regression-diff/   抓到图集位移 3 像素的 diff 图
 | 7. 故意弄坏 | 4/4 帧 FAIL，附像素数与 diff 图 | “我把一个图集区域移了三像素。骨架数据完全没变 —— 只有视觉检查抓得到。” |
 | 8. Unity scaffold | `hero.atlas → hero.atlas.txt`、mix 表、控制脚本 | “spine-unity 加载不了纯 `.atlas`。这条规则写在工具里，不是靠某个人记得。” |
 | 9. 授权边界 | `CAPABILITY_DENIED`，附完整命令行 | “在 trial 上它会拒绝 —— 并把原本要执行的命令交给你，买了授权后原样重跑就行。” |
+| 10. 可以直接交给客户的一个文件 | `demo/out/preview/hero.html`，约 236 KB | “双击打开就行。runtime、骨架、图集、图片全都打包在这一个文件里 —— 不用服务器、不用安装、不会向外拉取任何东西。可以拖时间轴。注意它内嵌了 Spine Runtimes，所以把文件交给别人需要你自己的 Spine 授权。” |
 
 ## 改成现场实时演示
 

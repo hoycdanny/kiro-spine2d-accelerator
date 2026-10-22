@@ -18,6 +18,8 @@
  *   7. Break it on purpose                  a repack is caught, with a diff
  *   8. What does the engine need?           Unity scaffold + mix table
  *   9. What needs a license?                refusal with the exact command
+ *  10. One file the client can open         a self-contained interactive HTML
+ *                                          page: no server, no install
  *
  * Degrades rather than failing: without the Python sidecar it synthesises a
  * small rig instead of reading a PSD, and without Chromium it skips the
@@ -431,6 +433,32 @@ async function main() {
     note('This machine has a licensed Spine, so the export ran rather than being refused.');
   }
 
+  // ------------------------------------------------------------------
+  heading(
+    'One file the client can open',
+    'The runtime, the skeleton, the atlas and the page image are embedded as data URLs in a single HTML file. No server, no install, nothing fetched — double-click it and drag the timeline. This step needs no browser to produce, only the spine-webgl dependency it embeds.',
+  );
+  const standalone = await step(
+    client,
+    'preview_export_html',
+    {
+      ...animatedAssets,
+      output: 'preview/hero.html',
+      animation: 'wave',
+      width: 480,
+      height: 480,
+    },
+    'either',
+  );
+  const standalonePage = !standalone.refused;
+  if (standalonePage) {
+    note(
+      'Say this out loud: the file embeds the Spine Runtimes, so handing it to anyone requires your own Spine license — https://esotericsoftware.com/spine-purchase',
+    );
+  } else {
+    note('Install the embedded runtime with: npm install @esotericsoftware/spine-webgl@4.2.120');
+  }
+
   await client.close();
 
   // ------------------------------------------------------------------
@@ -450,6 +478,14 @@ async function main() {
     console.log(dim('     four rendered frames of the wave animation'));
     console.log(`   ${join(WORKSPACE, 'regression-diff')}`);
     console.log(dim('     the diff image that caught the 3-pixel atlas shift'));
+  }
+  if (standalonePage) {
+    console.log(`   ${join(WORKSPACE, 'preview', 'hero.html')}`);
+    console.log(
+      dim(
+        '     the one file to hand a client: open it in any browser and drag the timeline, no server needed',
+      ),
+    );
   }
   console.log(`   ${join(WORKSPACE, 'integration', 'unity')}`);
   console.log(dim('     HeroController.cs and a README with the required renames'));

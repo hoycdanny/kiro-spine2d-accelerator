@@ -91,6 +91,11 @@ Spine events are the intended way for an animation to tell application code when
 nothing is fetched. If a preview renders and a web page does not, the difference is almost always
 asset loading (paths, CORS, or a dev server) rather than the data.
 
+`preview_export_html` writes that same inlined page as one standalone HTML file with interactive
+controls — the fastest way to put an animation in front of someone without a dev server, and a
+working reference for the loading and render-loop code above. See `steering/visual-regression.md`
+for what it is and is not good for; distributing the file requires your own Spine license.
+
 ## Checklist
 
 1. Runtime package major.minor matches the exporting editor.

@@ -1,4 +1,4 @@
-# Demo — two minutes, nine steps
+# Demo — two minutes, ten steps
 
 [繁體中文](README_ZH.md) · [简体中文](README_CN.md) · [日本語](README_JP.md) · [한국어](README_KR.md)
 
@@ -22,12 +22,13 @@ uv sync --project python          # step 2, the PSD step
 npx playwright install chromium   # steps 5-7, the visual steps
 ```
 
-Takes about 5 seconds on a warm machine. Then open these three folders — they are the demo:
+Takes about 5 seconds on a warm machine. Then open these — they are the demo:
 
 ```
 demo/out/generated/images/  one loose PNG per attachment — what File -> Import Data resolves against
 demo/out/preview/           four rendered frames of the animation
 demo/out/regression-diff/   the diff image that caught a 3-pixel atlas shift
+demo/out/preview/hero.html  double-click it: the animation plays in any browser, no server needed
 ```
 
 ## What to say, step by step
@@ -43,6 +44,7 @@ demo/out/regression-diff/   the diff image that caught a 3-pixel atlas shift
 | 7. Break it | 4/4 frames FAIL, with pixel counts and diff images | "I moved one atlas region by three pixels. The skeleton data did not change at all — only a visual check can catch that." |
 | 8. Unity scaffold | `hero.atlas → hero.atlas.txt`, mix table, controller | "spine-unity cannot load a plain `.atlas`. That rule is in the tool, not in someone's head." |
 | 9. Licensing | `CAPABILITY_DENIED`, with the exact command line | "On a trial it refuses — and hands you the command it would have run, so the work repeats verbatim after purchase." |
+| 10. One file to hand over | `demo/out/preview/hero.html`, about 236 KB | "Double-click it. The runtime, the skeleton, the atlas and the image are inside that one file — no server, no install, nothing fetched. Drag the timeline. It does embed the Spine Runtimes, so giving it to anyone needs your own Spine license." |
 
 ## Showing it live instead
 

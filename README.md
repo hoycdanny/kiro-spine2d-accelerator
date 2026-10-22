@@ -114,6 +114,7 @@ authenticate.
 | `psd_to_skeleton` | Layered PSD to skeleton JSON + atlas + page image, then inspect and lint it |
 | `render_preview` | Render animation frames with spine-ts in headless Chromium |
 | `visual_regression` | Compare against baselines, write diffs, gate on failure |
+| `preview_export_html` | One self-contained HTML file that plays the skeleton in any browser, with play/pause, a timeline scrub, an animation selector, speed and debug bones. Runtime, skeleton, atlas and page images embedded — no server, nothing fetched. Distributing it needs your own Spine license |
 | `runtime_scaffold` | Per-target file naming, controller code with a mix table, and a README |
 
 ## A walk through
