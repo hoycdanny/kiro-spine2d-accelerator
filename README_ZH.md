@@ -186,3 +186,11 @@ MIT，見 [LICENSE](LICENSE)。
 Spine 本身是 Esoteric Software 的商業軟體，Spine Runtimes 有自己的授權條款：
 使用整合了 Runtimes 的軟體的每一位使用者，都需要自己的 Spine 授權。
 本 Power 不包含也不轉散佈 Spine、其 runtimes 或其範例素材。
+
+把 Spine Runtimes 整合進產品的那個時間點需要持有 Spine 編輯器授權，整合之後即使授權日後到期，
+該產品仍可繼續散佈。把 Runtimes 整合進免費提供的開發工具、SDK 或程式庫是明確允許的，但使用那個
+工具的每一位使用者都需要自己的 Spine 授權。只要散佈的軟體含有 Spine Runtimes 就需要 Spine 授權，
+即使完全沒有用到 Spine 編輯器也一樣。本專案把 `@esotericsoftware/spine-webgl` 當成 optional
+dependency 從 npm 安裝，沒有內嵌任何 Spine 程式碼；`preview_export_html` 寫出的 HTML 檔內嵌了
+那份 runtime，所以把那個檔案散佈出去需要你自己的授權。
+詳見 https://esotericsoftware.com/spine-purchase 。

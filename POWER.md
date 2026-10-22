@@ -113,6 +113,23 @@ diverge. For exports consumed by 4.2 runtimes, pass `update: "4.2.xx"`.
 3. Optional: **uv** for the PSD generation sidecar; **playwright-core** plus a Chromium build for
    headless preview and visual regression. Everything else works without them.
 
+### Spine Runtimes license
+
+Facts, to be relayed to the developer whenever you write an HTML export or scaffold a runtime
+integration — not legal advice:
+
+- A Spine editor license is required at the time the Spine Runtimes are integrated into a product.
+  After that, the product may continue to be distributed even if the license later expires.
+- Integrating the Runtimes into a development tool, SDK or library free of charge is explicitly
+  allowed, but every user of that tool needs their own Spine license.
+- A Spine license is needed to distribute any software containing the Spine Runtimes, even when the
+  Spine editor itself is not used.
+- This package installs `@esotericsoftware/spine-webgl` from npm as an optional dependency and
+  vendors no Spine code. The HTML file `preview_export_html` writes embeds that runtime, so
+  distributing that file needs the developer's own license.
+
+See https://esotericsoftware.com/spine-purchase.
+
 ### Installation
 
 ```bash

@@ -177,3 +177,13 @@ MIT. [LICENSE](LICENSE)를 참고하세요.
 Spine 자체는 Esoteric Software의 상용 소프트웨어이며, Spine Runtimes에는 별도의 라이선스가
 있습니다. Runtimes를 통합한 소프트웨어의 모든 사용자는 각자 Spine 라이선스를 보유해야 합니다.
 이 Power는 Spine, 그 runtimes, 예제 애셋을 포함하거나 재배포하지 않습니다.
+
+Spine Runtimes를 제품에 통합하는 시점에 Spine 에디터 라이선스가 필요하며, 통합 이후에는
+라이선스가 나중에 만료되어도 그 제품을 계속 배포할 수 있습니다. Runtimes를 무료로 제공하는 개발
+도구, SDK, 라이브러리에 통합하는 것은 명시적으로 허용되지만, 그 도구의 모든 사용자는 각자 Spine
+라이선스를 보유해야 합니다. Spine 에디터 자체를 사용하지 않더라도 Spine Runtimes가 포함된
+소프트웨어를 배포하려면 Spine 라이선스가 필요합니다. 이 저장소는
+`@esotericsoftware/spine-webgl`을 optional dependency로 npm에서 설치하며 Spine 코드를 포함하지
+않습니다. `preview_export_html`이 쓰는 HTML 파일은 그 런타임을 내장하므로, 그 파일을 배포하려면
+본인의 라이선스가 필요합니다. 자세한 내용은 https://esotericsoftware.com/spine-purchase 를
+참고하세요.

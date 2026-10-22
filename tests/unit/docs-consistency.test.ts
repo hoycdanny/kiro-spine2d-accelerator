@@ -233,6 +233,31 @@ describe('honesty about verification status', () => {
   });
 });
 
+describe('the Spine Runtimes license notice', () => {
+  // The HTML written by preview_export_html embeds the Spine Runtimes, so a
+  // doc that drops the purchase link leaves someone handing that file over
+  // without knowing a license applies. The URL is language-neutral, so the
+  // translations stay assertable.
+  const DOCS = ['README.md', 'README_ZH.md', 'README_CN.md', 'README_JP.md', 'README_KR.md', 'POWER.md'];
+
+  it('links the purchase page from every top-level document', () => {
+    for (const file of DOCS) {
+      expect(read(file)).toContain('esotericsoftware.com/spine-purchase');
+    }
+  });
+
+  it('names the tool whose output embeds the runtime', () => {
+    expect(POWER).toContain('preview_export_html');
+    expect(README).toContain('preview_export_html');
+  });
+
+  it('names the exported file in every demo README language', () => {
+    for (const file of ['README.md', 'README_ZH.md', 'README_CN.md', 'README_JP.md', 'README_KR.md']) {
+      expect(read('demo', file)).toContain('hero.html');
+    }
+  });
+});
+
 describe('the editor import path is documented', () => {
   // psd_to_skeleton writes an images/ folder of loose per-attachment PNGs
   // because the Spine editor's File -> Import Data resolves attachments

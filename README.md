@@ -195,3 +195,12 @@ MIT. See [LICENSE](LICENSE).
 Spine itself is commercial software by Esoteric Software, and the Spine Runtimes carry their own
 license: every user of software that integrates them needs their own Spine license. This Power
 neither bundles nor redistributes Spine, its runtimes, or its example assets.
+
+A Spine editor license is required at the time the Spine Runtimes are integrated into a product,
+and after that the product may continue to be distributed even if the license later expires.
+Integrating the Runtimes into a development tool, SDK or library free of charge is explicitly
+allowed, but every user of that tool needs their own Spine license. A Spine license is needed to
+distribute any software containing the Spine Runtimes, even when the Spine editor itself is not
+used. This repository installs `@esotericsoftware/spine-webgl` from npm as an optional dependency
+and vendors no Spine code; the HTML file `preview_export_html` writes embeds that runtime, so
+distributing that file needs your own license. See https://esotericsoftware.com/spine-purchase.
