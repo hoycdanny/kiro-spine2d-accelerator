@@ -203,6 +203,7 @@ and read the matching steering file before acting. Delete or rename the file to 
 | `skeleton_lint` | Structural invariants, naming conventions, complexity budgets, export settings and atlas problems, each with a severity and a fix. Fails as `GATE_FAILED` for CI |
 | `export_settings_build` | Build an export settings JSON by diffing a known-good template. Refuses override keys the template lacks |
 | `pack_settings_build` | Build a `pack.json` with every documented field validated by type, range and enum |
+| `skeleton_document` | Write `<basename>.spine-doc.md` and `.spine-doc.json` describing what a rig *does*: bone hierarchy with setup-pose and derived world transforms, IK/transform/path/physics constraints resolved per bone from the data, per-bone influence measured by perturbing one bone and re-rendering, and a motion profile per animation. Records both `skeleton.hash` and its own fingerprint, because the hash alone does not detect change. Degrades to three sections without Chromium. *Registered with the Group D verification tools because it shares their headless harness.* |
 
 ### Group C — generation
 

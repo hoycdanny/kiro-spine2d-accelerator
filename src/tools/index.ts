@@ -21,6 +21,7 @@ import { registerSettingsTools } from './settings-tools';
 import { registerGenerateTools } from './generate-tools';
 import { registerPreviewTools } from './preview-tools';
 import { registerRegressionTools } from './regression-tools';
+import { registerDocTools } from './doc-tools';
 import { registerScaffoldTools } from './scaffold-tools';
 
 /** Collaborators the tool layer needs, all injectable for tests. */
@@ -57,6 +58,7 @@ export function registerAllTools(
   // Group D — verification
   registerPreviewTools(server, host, launcher);
   registerRegressionTools(server, host, launcher);
+  registerDocTools(server, host, launcher);
 
   // Group E — integration
   registerScaffoldTools(server, host);
@@ -73,5 +75,6 @@ export {
   registerGenerateTools,
   registerPreviewTools,
   registerRegressionTools,
+  registerDocTools,
   registerScaffoldTools,
 };

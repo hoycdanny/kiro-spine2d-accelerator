@@ -101,6 +101,7 @@ const EXPECTED_TOOLS = [
   'render_preview',
   'preview_export_html',
   'visual_regression',
+  'skeleton_document',
   // E — integration
   'runtime_scaffold',
 ];
@@ -305,5 +306,68 @@ describe('spine-mcp server contract', () => {
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain('not found');
     await client.close();
+  });
+
+  describe('skeleton_document', () => {
+    /** The smallest rig the documenter can describe without a renderer. */
+    const SKELETON = {
+      skeleton: { hash: 'contract', spine: '4.2.37' },
+      bones: [{ name: 'root' }, { name: 'body', parent: 'root', length: 10 }],
+      slots: [{ name: 'body', bone: 'body', attachment: 'body' }],
+      skins: [
+        { name: 'default', attachments: { body: { body: { width: 8, height: 8 } } } },
+      ],
+      animations: {},
+    };
+
+    const documentHost = () =>
+      createFakeHost({
+        files: {
+          'C:\\work\\project\\export\\hero.json': JSON.stringify(SKELETON, null, 2),
+        },
+      });
+
+    it('declares the surface the Power documents', async () => {
+      const client = await connect(documentHost());
+      const { tools } = await client.listTools();
+      const tool = tools.find((entry) => entry.name === 'skeleton_document')!;
+
+      expect(tool.description!.length).toBeGreaterThanOrEqual(80);
+      expect(tool.inputSchema.type).toBe('object');
+      expect(tool.annotations?.destructiveHint).toBe(false);
+      expect(tool.annotations?.readOnlyHint).toBe(false);
+      await client.close();
+    });
+
+    it("writes both documents with probeMode 'off', launching no browser", async () => {
+      // Deliberately 'off': this case is about resource support and tool
+      // surface, not about rendering, and the shared stub above returns a
+      // fixed `__spinePreviewRender`-shaped object from `evaluate` that a
+      // probe run would read undefined `neutral` and `framing` out of.
+      const client = await connect(documentHost());
+      const result = await client.callTool({
+        name: 'skeleton_document',
+        arguments: {
+          skeleton: 'export/hero.json',
+          outDir: 'export',
+          probeMode: 'off',
+        },
+      });
+
+      expect(result.isError).toBeFalsy();
+      const data = structured(result)['data'] as Record<string, unknown>;
+      expect(data['markdownPath']).toBe(
+        'C:\\work\\project\\export\\hero.spine-doc.md',
+      );
+      expect(data['jsonPath']).toBe('C:\\work\\project\\export\\hero.spine-doc.json');
+      expect((data['probe'] as Record<string, unknown>)['available']).toBe(false);
+      await client.close();
+    });
+
+    it('registers no resources, so the tool result is the whole answer', async () => {
+      const client = await connect(documentHost());
+      await expect(client.listResources()).rejects.toThrow();
+      await client.close();
+    });
   });
 });
