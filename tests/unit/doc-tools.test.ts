@@ -707,7 +707,7 @@ describe('degradation', () => {
   it('still writes both files when Chromium is absent, and records why verbatim', async () => {
     const host = docHost();
     const message =
-      'DEPENDENCY_MISSING: Chromium failed to launch (no such file). Install the browser with: npx playwright install chromium';
+      'DEPENDENCY_MISSING: Chromium failed to launch (no such file). Install the browser with: npx playwright-core install chromium';
     const data = unwrap(
       await skeletonDocument(host, probeLauncher(freshCapture(), { fail: message }), {
         skeleton: 'export/hero.json',
@@ -718,7 +718,7 @@ describe('degradation', () => {
     expect(Object.keys(host.writes).sort()).toEqual([MD, JSON_PATH].sort());
     expect(data.probe.available).toBe(false);
     // The fix command survives into the file.
-    expect(data.probe.reason).toContain('npx playwright install chromium');
+    expect(data.probe.reason).toContain('npx playwright-core install chromium');
     // The planned count is kept, unlike the probeMode 'off' case.
     expect(data.probe.planned).toBe(9);
     expect(data.probe.performed).toBe(0);

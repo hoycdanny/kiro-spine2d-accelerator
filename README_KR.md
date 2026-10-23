@@ -154,7 +154,7 @@ npm run build        # tsc -> dist/
 |---|---|
 | `skeleton_inspect`, `atlas_inspect`, `skeleton_diff`, `skeleton_lint`, `export_settings_build`, `pack_settings_build`, `runtime_scaffold`, `skeleton_animate` | Node 외에는 아무것도 필요 없습니다. Spine 설치도 라이선스도 필요 없습니다. |
 | `psd_to_skeleton` | [`uv`](https://docs.astral.sh/uv/)와 Python — `uv sync --project python` |
-| `render_preview`, `preview_export_html`, `visual_regression`, 그리고 `skeleton_document`의 실측 영향 범위 섹션 | 선택 의존성 `@esotericsoftware/spine-webgl`(4.2.120 고정)과 `playwright-core`(1.62.0 고정), 그리고 Chromium: `npx playwright install chromium`. `preview_export_html`은 런타임만 필요하고 브라우저는 필요 없습니다. |
+| `render_preview`, `preview_export_html`, `visual_regression`, 그리고 `skeleton_document`의 실측 영향 범위 섹션 | 선택 의존성 `@esotericsoftware/spine-webgl`(4.2.120 고정)과 `playwright-core`(1.62.0 고정), 그리고 Chromium: `npx playwright-core install chromium`. `preview_export_html`은 런타임만 필요하고 브라우저는 필요 없습니다. |
 | `spine_env_probe`, `spine_project_info`, `spine_export_settings_capture` | Spine 에디터 설치. 트라이얼로도 충분합니다. |
 | `spine_export`, `spine_pack`, `spine_unpack`, `spine_import`, `spine_cleanup`, 그리고 이들을 담은 `spine_batch` | **정식 라이선스**의 Spine. 트라이얼이 막는 것이 정확히 이 묶음입니다. |
 
@@ -162,7 +162,7 @@ npm run build        # tsc -> dist/
 돌아옵니다.
 
 ```
-DEPENDENCY_MISSING: Chromium failed to launch (...). Install the browser with: npx playwright install chromium
+DEPENDENCY_MISSING: Chromium failed to launch (...). Install the browser with: npx playwright-core install chromium
 Headless preview needs playwright-core plus a Chromium build. Everything else in this Power works without them.
 ```
 

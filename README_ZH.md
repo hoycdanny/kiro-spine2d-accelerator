@@ -147,14 +147,14 @@ Server 走 stdio、不開任何網路埠，因此沒有需要認證的監聽面�
 |---|---|
 | `skeleton_inspect`、`atlas_inspect`、`skeleton_diff`、`skeleton_lint`、`export_settings_build`、`pack_settings_build`、`runtime_scaffold`、`skeleton_animate` | 除了 Node 什麼都不用。不需要安裝 Spine，也不需要授權。 |
 | `psd_to_skeleton` | [`uv`](https://docs.astral.sh/uv/) 與 Python —— `uv sync --project python` |
-| `render_preview`、`preview_export_html`、`visual_regression`，以及 `skeleton_document` 的實測影響範圍一節 | 選用依賴 `@esotericsoftware/spine-webgl`（鎖定 4.2.120）與 `playwright-core`（鎖定 1.62.0），外加一份 Chromium：`npx playwright install chromium`。`preview_export_html` 只需要 runtime，不需要瀏覽器。 |
+| `render_preview`、`preview_export_html`、`visual_regression`，以及 `skeleton_document` 的實測影響範圍一節 | 選用依賴 `@esotericsoftware/spine-webgl`（鎖定 4.2.120）與 `playwright-core`（鎖定 1.62.0），外加一份 Chromium：`npx playwright-core install chromium`。`preview_export_html` 只需要 runtime，不需要瀏覽器。 |
 | `spine_env_probe`、`spine_project_info`、`spine_export_settings_capture` | 一份 Spine 編輯器安裝。trial 就夠。 |
 | `spine_export`、`spine_pack`、`spine_unpack`、`spine_import`、`spine_cleanup`，以及載有這些命令的 `spine_batch` | **正式授權**的 Spine。trial 封鎖的正好是這一族。 |
 
 缺少選用依賴時，得到的是一個 `DEPENDENCY_MISSING` 錯誤並附上修好它的命令，而不是 stack trace：
 
 ```
-DEPENDENCY_MISSING: Chromium failed to launch (...). Install the browser with: npx playwright install chromium
+DEPENDENCY_MISSING: Chromium failed to launch (...). Install the browser with: npx playwright-core install chromium
 Headless preview needs playwright-core plus a Chromium build. Everything else in this Power works without them.
 ```
 

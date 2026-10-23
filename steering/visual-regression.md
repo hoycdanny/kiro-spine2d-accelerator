@@ -133,7 +133,7 @@ headless renderer uses, so a scrubbed frame lands where a runtime playing from t
 |---|---|
 | Coverage 0 on every frame | The atlas regions do not match the attachment names. Run `skeleton_inspect` with the atlas. |
 | `CLI_FAILED` mentioning a region or attachment | Same cause, surfaced by the runtime's attachment loader. |
-| `DEPENDENCY_MISSING` | playwright-core is missing, or Chromium is not installed (`npx playwright install chromium`). |
+| `DEPENDENCY_MISSING` | playwright-core is missing, or Chromium is not installed (`npx playwright-core install chromium`). |
 | Dark halos around edges | Premultiplied alpha mismatch. Check the atlas `pma` flag against `premultipliedAlpha`. |
 | A shader compilation failure | A forced GL backend. The launcher deliberately passes no `--use-gl` override; headless Chromium's default software path works. |
 | Frames identical across times | The animation may genuinely be static, or the sample times all fall before its first keyframe. |

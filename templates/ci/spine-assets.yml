@@ -46,7 +46,7 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        run: npx playwright-core install --with-deps chromium
 
       # --- Gate 1: data correctness -------------------------------------
       # Fails on any error-severity finding. Raise to --fail-on=warning once

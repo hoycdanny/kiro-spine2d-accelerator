@@ -155,7 +155,7 @@ npm run build        # tsc -> dist/
 |---|---|
 | `skeleton_inspect`、`atlas_inspect`、`skeleton_diff`、`skeleton_lint`、`export_settings_build`、`pack_settings_build`、`runtime_scaffold`、`skeleton_animate` | Node 以外は不要。Spine のインストールもライセンスも要りません。 |
 | `psd_to_skeleton` | [`uv`](https://docs.astral.sh/uv/) と Python —— `uv sync --project python` |
-| `render_preview`、`preview_export_html`、`visual_regression`、および `skeleton_document` の実測影響範囲のセクション | 任意依存の `@esotericsoftware/spine-webgl`（4.2.120 固定）と `playwright-core`（1.62.0 固定）、加えて Chromium: `npx playwright install chromium`。`preview_export_html` はランタイムだけで足り、ブラウザは不要です。 |
+| `render_preview`、`preview_export_html`、`visual_regression`、および `skeleton_document` の実測影響範囲のセクション | 任意依存の `@esotericsoftware/spine-webgl`（4.2.120 固定）と `playwright-core`（1.62.0 固定）、加えて Chromium: `npx playwright-core install chromium`。`preview_export_html` はランタイムだけで足り、ブラウザは不要です。 |
 | `spine_env_probe`、`spine_project_info`、`spine_export_settings_capture` | Spine エディタのインストール。Trial でも足ります。 |
 | `spine_export`、`spine_pack`、`spine_unpack`、`spine_import`、`spine_cleanup`、およびそれらを含む `spine_batch` | **ライセンス版**の Spine。Trial が止めるのはちょうどこの一群です。 |
 
@@ -163,7 +163,7 @@ npm run build        # tsc -> dist/
 `DEPENDENCY_MISSING` エラーが返ります。
 
 ```
-DEPENDENCY_MISSING: Chromium failed to launch (...). Install the browser with: npx playwright install chromium
+DEPENDENCY_MISSING: Chromium failed to launch (...). Install the browser with: npx playwright-core install chromium
 Headless preview needs playwright-core plus a Chromium build. Everything else in this Power works without them.
 ```
 

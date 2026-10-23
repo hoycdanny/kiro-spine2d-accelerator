@@ -210,7 +210,7 @@ async function main() {
     if (!existsSync(required)) {
       fail(
         `${required} is missing. The demo must complete its PSD and visual steps: ` +
-          'install uv (`uv sync --project python`) and Chromium (`npx playwright install chromium`).',
+          'install uv (`uv sync --project python`) and Chromium (`npx playwright-core install chromium`).',
       );
     }
   }

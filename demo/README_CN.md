@@ -16,8 +16,8 @@ npm run demo
 两个可选依赖会让 demo 更完整。没装也能跑，它会明确说明跳过了什么：
 
 ```bash
-uv sync --project python          # 第 2 步，PSD 那段
-npx playwright install chromium   # 第 5–7 步，视觉那段
+uv sync --project python               # 第 2 步，PSD 那段
+npx playwright-core install chromium   # 第 5–7 步，视觉那段
 ```
 
 热机状态约 5 秒跑完。然后打开这几个产物 —— 它们就是 demo 的重点：
@@ -82,7 +82,7 @@ Power 装进 Kiro 后，用这些自然语言指令可以走出同一条路径�
 |---|---|
 | `dist/server.js is missing` | 执行 `npm run build` |
 | 第 2 步说 uv 不可用 | 执行 `uv sync --project python`，或让它改用内置的小骨架 |
-| 第 5–7 步被跳过 | 执行 `npx playwright install chromium` |
+| 第 5–7 步被跳过 | 执行 `npx playwright-core install chromium` |
 | 在 Spine 编辑器 `File -> Import Data` 之后画面一片空白 | 编辑器以导入的 JSON 为基准，把每个 attachment 解析成 `<skeleton.images>/<attachmentName>.png`，完全不读 `.atlas`。请确认 `demo/out/generated/images/` 就在 `hero.json` 旁边、且每个 attachment 都有一张 PNG；若目录不存在，用 `emitLooseImages` true（默认值）重跑一次。你自己放进该目录的 PNG 会列在 `foreignImagesKept` 并原样保留：只有以已知身体部位命名的图才会被清理 |
 | 某一步报告 `CLI_TIMEOUT` | 关掉所有 Spine 编辑器窗口；launcher 会把 CLI 请求交给已打开的编辑器，然后永远不返回 |
 | 想要纯文本逐字稿 | `NO_COLOR=1 npm run demo > demo-transcript.txt` |

@@ -357,7 +357,7 @@ async function main() {
   const visuals = !preview.refused;
   if (!visuals) {
     note('Chromium is unavailable, so the visual steps are skipped.');
-    note('Install it with: npx playwright install chromium');
+    note('Install it with: npx playwright-core install chromium');
   }
 
   if (visuals) {

@@ -9,7 +9,7 @@ npm test
 
 # optional halves
 uv sync --project python && uv run --project python pytest
-npx playwright install chromium
+npx playwright-core install chromium
 ```
 
 The integration tests skip themselves when Spine or Chromium is absent, so a clean machine still

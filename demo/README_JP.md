@@ -17,8 +17,8 @@ npm run demo
 任意の依存を 2 つ入れるとデモが完全になります。無くても動作し、何をスキップしたか明示します。
 
 ```bash
-uv sync --project python          # ステップ 2、PSD の部分
-npx playwright install chromium   # ステップ 5〜7、ビジュアルの部分
+uv sync --project python               # ステップ 2、PSD の部分
+npx playwright-core install chromium   # ステップ 5〜7、ビジュアルの部分
 ```
 
 ウォーム状態で約 5 秒です。終わったらこれらを開いてください。これがデモの中心です。
@@ -85,7 +85,7 @@ wave アニメーションのフレームを 4 枚レンダリングして保存
 |---|---|
 | `dist/server.js is missing` | `npm run build` |
 | ステップ 2 で uv が使えないと出る | `uv sync --project python`、またはそのまま内蔵の小さなリグで続行 |
-| ステップ 5〜7 がスキップされる | `npx playwright install chromium` |
+| ステップ 5〜7 がスキップされる | `npx playwright-core install chromium` |
 | Spine エディタで `File -> Import Data` した後、キャンバスが真っ白 | エディタは読み込んだ JSON を基準に各アタッチメントを `<skeleton.images>/<attachmentName>.png` として解決し、`.atlas` は一切読みません。`demo/out/generated/images/` が `hero.json` の隣にあり、アタッチメントごとに PNG が揃っているか確認してください。フォルダが無ければ `emitLooseImages` true（既定値）で再実行します。自分でそのフォルダに置いた PNG は `foreignImagesKept` に報告されたうえでそのまま残ります。削除されるのは既知の体パーツ名の画像だけです |
 | どこかで `CLI_TIMEOUT` が出る | Spine エディタのウィンドウをすべて閉じる。ランチャーは開いているエディタに CLI 要求を渡し、戻ってこなくなります |
 | テキストの記録が欲しい | `NO_COLOR=1 npm run demo > demo-transcript.txt` |

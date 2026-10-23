@@ -112,7 +112,7 @@ export function createPlaywrightLauncher(): BrowserLauncher {
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : String(cause);
       throw new Error(
-        `DEPENDENCY_MISSING: Chromium failed to launch (${message}). Install the browser with: npx playwright install chromium`,
+        `DEPENDENCY_MISSING: Chromium failed to launch (${message}). Install the browser with: npx playwright-core install chromium`,
       );
     }
   };

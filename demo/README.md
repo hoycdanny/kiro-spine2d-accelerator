@@ -18,8 +18,8 @@ Two optional dependencies make the demo complete. Without them it still runs and
 skipped:
 
 ```bash
-uv sync --project python          # step 2, the PSD step
-npx playwright install chromium   # steps 5-7, the visual steps
+uv sync --project python               # step 2, the PSD step
+npx playwright-core install chromium   # steps 5-7, the visual steps
 ```
 
 Takes about 5 seconds on a warm machine. Then open these — they are the demo:
@@ -88,7 +88,7 @@ Say these out loud rather than waiting to be asked:
 |---|---|
 | `dist/server.js is missing` | `npm run build` |
 | Step 2 says uv is unavailable | `uv sync --project python`, or let it synthesise a small rig instead |
-| Steps 5-7 are skipped | `npx playwright install chromium` |
+| Steps 5-7 are skipped | `npx playwright-core install chromium` |
 | The Spine editor shows a blank canvas after `File -> Import Data` | The editor resolves each attachment as `<skeleton.images>/<attachmentName>.png` relative to the imported JSON and never reads the `.atlas`. Check that `demo/out/generated/images/` sits next to `hero.json` with one PNG per attachment; re-run with `emitLooseImages` true (the default) if it is missing. A PNG you added to that folder yourself is reported in `foreignImagesKept` and left alone: only images named after a known body part are pruned |
 | A step reports `CLI_TIMEOUT` | Close any open Spine editor window; the launcher hands CLI requests to a running editor and never returns |
 | You want the transcript as plain text | `NO_COLOR=1 npm run demo > demo-transcript.txt` |

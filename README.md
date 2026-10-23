@@ -158,7 +158,7 @@ Capabilities degrade one at a time; this is not all-or-nothing.
 |---|---|
 | `skeleton_inspect`, `atlas_inspect`, `skeleton_diff`, `skeleton_lint`, `export_settings_build`, `pack_settings_build`, `runtime_scaffold`, `skeleton_animate` | Nothing beyond Node. No Spine installation, no licence. |
 | `psd_to_skeleton` | [`uv`](https://docs.astral.sh/uv/) and Python — `uv sync --project python` |
-| `render_preview`, `preview_export_html`, `visual_regression`, and the measured-influence section of `skeleton_document` | The optional dependencies `@esotericsoftware/spine-webgl` (pinned 4.2.120) and `playwright-core` (pinned 1.62.0), plus a Chromium build: `npx playwright install chromium`. `preview_export_html` needs only the runtime, not the browser. |
+| `render_preview`, `preview_export_html`, `visual_regression`, and the measured-influence section of `skeleton_document` | The optional dependencies `@esotericsoftware/spine-webgl` (pinned 4.2.120) and `playwright-core` (pinned 1.62.0), plus a Chromium build: `npx playwright-core install chromium`. `preview_export_html` needs only the runtime, not the browser. |
 | `spine_env_probe`, `spine_project_info`, `spine_export_settings_capture` | A Spine editor installation. A trial is enough. |
 | `spine_export`, `spine_pack`, `spine_unpack`, `spine_import`, `spine_cleanup`, and `spine_batch` when it carries one of those | A **licensed** Spine. The trial blocks exactly this family. |
 
@@ -166,7 +166,7 @@ A missing optional dependency produces a `DEPENDENCY_MISSING` error naming the c
 it, not a stack trace:
 
 ```
-DEPENDENCY_MISSING: Chromium failed to launch (...). Install the browser with: npx playwright install chromium
+DEPENDENCY_MISSING: Chromium failed to launch (...). Install the browser with: npx playwright-core install chromium
 Headless preview needs playwright-core plus a Chromium build. Everything else in this Power works without them.
 ```
 

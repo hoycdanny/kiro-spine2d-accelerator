@@ -7,7 +7,7 @@
  * docs and the code disagree.
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 
 const REPO_ROOT = join(__dirname, '..', '..');
 
@@ -653,5 +653,41 @@ describe('the five READMEs stay at parity on the caveats', () => {
     for (const file of READMES) {
       expect(read(file)).toContain('npm run docs:images');
     }
+  });
+});
+
+describe('the Chromium install command', () => {
+  // This project depends on playwright-core, pinned to 1.62.0, and the full
+  // playwright package is not installed. `npx playwright install` therefore
+  // fetches playwright from the registry at whatever version resolves and
+  // downloads the Chromium revision that version wants, defeating the pin.
+  // The only correct spelling is `npx playwright-core install`.
+  const SKIP = new Set(['node_modules', '.git', '.worktrees', 'dist', 'coverage', 'out']);
+
+  function markdownFiles(dir: string, found: string[] = []): string[] {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        if (!SKIP.has(entry.name)) markdownFiles(join(dir, entry.name), found);
+      } else if (entry.name.endsWith('.md')) {
+        found.push(join(dir, entry.name));
+      }
+    }
+
+    return found;
+  }
+
+  const DOCS = markdownFiles(REPO_ROOT);
+
+  it('finds the documents to check', () => {
+    // A sanity floor, so the assertion below cannot pass vacuously.
+    expect(DOCS.length).toBeGreaterThanOrEqual(25);
+  });
+
+  it('is never spelled as the full playwright package in any document', () => {
+    const offenders = DOCS.filter((file) =>
+      readFileSync(file, 'utf8').includes('npx playwright install'),
+    ).map((file) => relative(REPO_ROOT, file));
+
+    expect(offenders).toEqual([]);
   });
 });

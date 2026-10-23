@@ -136,7 +136,7 @@ See https://esotericsoftware.com/spine-purchase.
 npm install
 npm run build          # compiles src/ to dist/
 uv sync --project python   # optional: PSD generation
-npx playwright install chromium   # optional: headless preview
+npx playwright-core install chromium   # optional: headless preview
 ```
 
 Then point the MCP client at the server (see `mcp.json`):
