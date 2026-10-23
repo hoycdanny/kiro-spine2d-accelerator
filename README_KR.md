@@ -37,6 +37,12 @@ Spine 에디터는 한 번도 열지 않았습니다. 오른쪽에서 보라색 
 본 체인을 만들고, 부위들을 atlas로 패킹하고, 스켈레톤 JSON을 씁니다. 위 이미지가 그 경로의 처음과
 끝입니다. Spine을 한 번도 실행하지 않으므로 Spine 라이선스가 필요하지 않습니다.
 
+![그 PSD에서 생성한 캐릭터가 움직이는 루프. 두 팔이 1초 동안 내려갔다가 다시 올라오는 모습](docs/images/hero-wave.gif)
+
+*같은 생성 리그가 움직이는 모습입니다. 데모의 1.00초 `wave` 20프레임을 `render_preview`가
+`generated/hero-animated.json`과 그 옆의 atlas에서 프레임당 50ms로 렌더링했습니다.
+모든 픽셀이 절차적으로 그린 PSD에서 나왔고, Spine 에디터는 한 번도 열지 않았습니다.*
+
 ![어태치먼트 이름이 붙은 16개의 개별 PNG 파일을 4×4로 배치하고 파일명을 표시한 이미지](docs/images/attachment-images.png)
 
 *`generated/images/` 폴더: 어태치먼트마다 PNG 한 장이고, 파일명이 곧 어태치먼트 이름입니다.
@@ -77,6 +83,11 @@ diff, 해시 비교, 린트가 모두 "아무 일도 없었다"고 보고합니�
 라이선스가 필요합니다. [라이선스](#라이선스)를 참고하세요.*
 
 ### 리그를 리뷰하기 위한 자리표시 모션
+
+![생성된 walk의 루프 재생. 다리가 한 걸음을 내딛고 돌아오는 동작을 반복하는 모습](docs/images/generated-walk.gif)
+
+*`skeleton_animate`가 쓴 `walk` 템플릿, 1.00초 루프의 20프레임 전부입니다. 아래의 세 프레임은
+같은 동작이며, GIF를 재생하지 않는 환경을 위해 남겨 둡니다.*
 
 ![생성된 walk의 0.00·0.25·0.50초 세 프레임. 다리가 한 걸음을 내딛는 모습](docs/images/generated-walk.png)
 
@@ -361,8 +372,8 @@ npm run docs:images        # node docs/make-doc-images.mjs
 ```
 
 `demo/run-demo.js`를 실행하고, 생성된 walk를 위해 서버를 stdio로 구동하고,
-`demo/out/preview/hero.html`을 Chromium에서 스크린샷하고, 라벨이 붙은 띠를 Pillow
-([`docs/compose-doc-images.py`](docs/compose-doc-images.py))로 합성합니다. `--skip-demo`를 주면
+`demo/out/preview/hero.html`을 Chromium에서 스크린샷하고, 라벨이 붙은 띠와 두 개의 루프 GIF를
+Pillow([`docs/compose-doc-images.py`](docs/compose-doc-images.py))로 합성합니다. `--skip-demo`를 주면
 기존 `demo/out/`을 재사용합니다. 데모에 필요한 모든 것을 필요로 하며, 절반만 다시 만들어진 상태를
 남기는 대신 실패합니다. 외부 아트 애셋은 읽지 않습니다. 모든 픽셀은 `demo/make-sample-psd.py` 또는
 거기서 렌더링된 프레임에서 시작합니다.

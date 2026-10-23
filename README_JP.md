@@ -38,6 +38,12 @@ Spine エディタは一度も開いていません。右で紫のマントが�
 ボーンチェーンを組み、パーツを atlas にパックし、スケルトン JSON を書き出します。上の画像がその
 経路の始点と終点です。Spine を一度も起動しないので、Spine ライセンスは要りません。
 
+![その PSD から生成したキャラクターが動くループ。両腕が 1 秒の間に下がって戻る様子](docs/images/hero-wave.gif)
+
+*同じ生成されたリグが動いている様子: デモの 1.00 秒 `wave` の 20 フレームを、
+`generated/hero-animated.json` と隣の atlas から `render_preview` が 1 フレーム 50 ms で
+描画したものです。全ピクセルが手続き的に描かれた PSD 由来で、Spine エディタは一度も開いていません。*
+
 ![アタッチメント名が付いた 16 個の個別 PNG ファイルを 4×4 に並べ、ファイル名を添えたもの](docs/images/attachment-images.png)
 
 *`generated/images/` フォルダ: アタッチメント 1 つにつき PNG 1 枚、名前はそのアタッチメント名です。
@@ -79,6 +85,11 @@ CI が必要とするのはまさにこれです。*
 誰かに渡すには自分の Spine ライセンスが必要です。[ライセンス](#ライセンス) を参照してください。*
 
 ### リグをレビューするためのプレースホルダーのモーション
+
+![生成された walk のループ再生。脚が一歩を踏み出して戻るまでを繰り返す様子](docs/images/generated-walk.gif)
+
+*`skeleton_animate` が書いた `walk` テンプレート、1.00 秒ループの 20 フレーム全部です。
+下の 3 コマは同じ動きで、GIF を再生しない環境のために残しています。*
 
 ![生成された walk の 0.00・0.25・0.50 秒の 3 フレーム。脚が一歩を踏み出していく様子](docs/images/generated-walk.png)
 
@@ -368,8 +379,8 @@ npm run docs:images        # node docs/make-doc-images.mjs
 ```
 
 `demo/run-demo.js` を実行し、生成された walk のためにサーバーを stdio で駆動し、
-`demo/out/preview/hero.html` を Chromium でスクリーンショットし、ラベル付きの帯を Pillow
-（[`docs/compose-doc-images.py`](docs/compose-doc-images.py)）で合成します。`--skip-demo` を渡すと
+`demo/out/preview/hero.html` を Chromium でスクリーンショットし、ラベル付きの帯と 2 つのループ
+GIF を Pillow（[`docs/compose-doc-images.py`](docs/compose-doc-images.py)）で合成します。`--skip-demo` を渡すと
 既存の `demo/out/` を再利用します。デモに必要なものすべてを必要とし、半分だけ再生成された状態を
 残すのではなく失敗します。外部のアート素材は読みません。すべてのピクセルは
 `demo/make-sample-psd.py` か、そこから描画されたフレームに由来します。

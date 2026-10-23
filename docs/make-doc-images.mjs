@@ -44,6 +44,36 @@ const PREVIEW_VIEWPORT = { width: 720, height: 760 };
 /** Where the preview's timeline is parked, as a fraction of the duration. */
 const PREVIEW_SCRUB = 0.5;
 
+/** Frames per GIF. 20 over a 1.00 s animation is one frame every 50 ms. */
+const GIF_FRAME_COUNT = 20;
+/** Frame delay, matching the sample spacing so playback runs at real speed. */
+const GIF_FRAME_MS = 50;
+/** Square render size per GIF frame, as for the still strips. */
+const GIF_CANVAS = 240;
+/** Size ceiling per GIF: 600 KB. A README should not cost a megabyte. */
+const GIF_MAX_BYTES = 614_400;
+/**
+ * Render the GIF frames straight onto the colour they will sit on.
+ *
+ * This is `IMAGE_BG` in `docs/compose-doc-images.py`, the card fill. An
+ * antialiased outline rendered over transparency and then composited onto
+ * the card keeps a trace of the transparent black it was blended with,
+ * which shows up as a dark fringe once the frame is quantised to 256
+ * colours. Rendering onto the final colour has nothing to fringe against.
+ */
+const STAGE_BACKGROUND = [252 / 255, 252 / 255, 253 / 255, 1];
+
+/**
+ * `count` sample times spread across `duration`, excluding the endpoint.
+ *
+ * t = duration is the same pose as t = 0 in a clean loop, so sampling it
+ * would put a duplicate frame in the GIF and stall the motion for one
+ * frame on every cycle.
+ */
+function evenTimes(duration, count) {
+  return Array.from({ length: count }, (_, index) => (index * duration) / count);
+}
+
 function log(message) {
   console.log(`[docs:images] ${message}`);
 }
@@ -92,11 +122,12 @@ function framesIn(directory) {
 }
 
 /**
- * Render three moments of a template-generated walk.
+ * Render three moments of a template-generated walk, plus the two GIF sets.
  *
  * Done over stdio rather than by importing `dist/` so the frames come from
  * the same path an MCP client takes, which is what the README claims about
- * them.
+ * them. One session for all four renders: a second one would start another
+ * server process and another Chromium for no gain.
  */
 async function generatedWalkFrames() {
   const transport = new StdioClientTransport({
@@ -126,13 +157,51 @@ async function generatedWalkFrames() {
       height: 240,
       times: [0, 0.25, 0.5],
     });
+
+    // The same `walk`, sampled densely enough to animate.
+    await callTool(client, 'render_preview', {
+      skeleton: 'doc-frames/hero-generated.json',
+      atlas: 'generated/hero.atlas',
+      imageDir: 'generated',
+      animation: 'walk',
+      outputDir: 'doc-frames/walk-gif',
+      width: GIF_CANVAS,
+      height: GIF_CANVAS,
+      background: STAGE_BACKGROUND,
+      times: evenTimes(1, GIF_FRAME_COUNT),
+    });
+
+    // The demo's own hand-written 1.00 s `wave`, which loops cleanly.
+    await callTool(client, 'render_preview', {
+      skeleton: 'generated/hero-animated.json',
+      atlas: 'generated/hero.atlas',
+      imageDir: 'generated',
+      animation: 'wave',
+      outputDir: 'doc-frames/wave-gif',
+      width: GIF_CANVAS,
+      height: GIF_CANVAS,
+      background: STAGE_BACKGROUND,
+      times: evenTimes(1, GIF_FRAME_COUNT),
+    });
   } finally {
     await client.close();
   }
 
   const frames = framesIn(join(SCRATCH, 'walk'));
   if (frames.length !== 3) fail(`expected 3 walk frames, found ${frames.length}.`);
-  return frames;
+
+  for (const directory of ['walk-gif', 'wave-gif']) {
+    const found = framesIn(join(SCRATCH, directory)).length;
+    if (found !== GIF_FRAME_COUNT) {
+      fail(`expected ${GIF_FRAME_COUNT} ${directory} frames, found ${found}.`);
+    }
+  }
+
+  return {
+    walk: frames,
+    walkGif: join(SCRATCH, 'walk-gif'),
+    waveGif: join(SCRATCH, 'wave-gif'),
+  };
 }
 
 /**
@@ -201,6 +270,7 @@ async function main() {
   for (const required of [
     join(WORKSPACE, 'hero.psd'),
     join(WORKSPACE, 'generated', 'hero.json'),
+    join(WORKSPACE, 'generated', 'hero-animated.json'),
     join(WORKSPACE, 'generated', 'images'),
     join(WORKSPACE, 'preview', 'wave-02-0_500s.png'),
     join(WORKSPACE, 'baseline', 'wave', 'wave-02-0_500s.png'),
@@ -218,7 +288,7 @@ async function main() {
   mkdirSync(SCRATCH, { recursive: true });
   mkdirSync(IMAGES, { recursive: true });
 
-  const walkFrames = await generatedWalkFrames();
+  const { walk: walkFrames, walkGif, waveGif } = await generatedWalkFrames();
   await screenshotInteractivePreview(join(IMAGES, 'interactive-preview.png'));
 
   // 1. The payoff: layered artwork on the left, the rig rendered on the right.
@@ -279,6 +349,40 @@ async function main() {
     '--panel',
     walkFrames[2],
     'walk  t = 0.50 s',
+  ]);
+
+  // 5. The same two animations moving. The strips above stay as the static
+  //    fallback for any reader whose client does not play a GIF.
+  compose([
+    'animate',
+    '--out',
+    join(IMAGES, 'generated-walk.gif'),
+    '--dir',
+    walkGif,
+    '--height',
+    String(GIF_CANVAS),
+    '--label',
+    `walk  1.00 s loop, ${GIF_FRAME_COUNT} frames`,
+    '--duration-ms',
+    String(GIF_FRAME_MS),
+    '--max-bytes',
+    String(GIF_MAX_BYTES),
+  ]);
+
+  compose([
+    'animate',
+    '--out',
+    join(IMAGES, 'hero-wave.gif'),
+    '--dir',
+    waveGif,
+    '--height',
+    String(GIF_CANVAS),
+    '--label',
+    `wave  1.00 s, ${GIF_FRAME_COUNT} frames`,
+    '--duration-ms',
+    String(GIF_FRAME_MS),
+    '--max-bytes',
+    String(GIF_MAX_BYTES),
   ]);
 
   log(`done. ${readdirSync(IMAGES).sort().join(', ')}`);

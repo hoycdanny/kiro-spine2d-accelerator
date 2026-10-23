@@ -504,14 +504,20 @@ describe('the documentation images', () => {
   // the failure has to happen here instead.
   const READMES = ['README.md', 'README_ZH.md', 'README_CN.md', 'README_JP.md', 'README_KR.md'];
 
-  /** Every image `docs/make-doc-images.mjs` is expected to produce. */
-  const COMMITTED_IMAGES = [
+  /** The still images `docs/make-doc-images.mjs` is expected to produce. */
+  const COMMITTED_PNGS = [
     'attachment-images.png',
     'generated-walk.png',
     'interactive-preview.png',
     'psd-to-rig.png',
     'visual-regression-diff.png',
   ];
+
+  /** The animated ones, from the same generator and the same frames. */
+  const COMMITTED_GIFS = ['generated-walk.gif', 'hero-wave.gif'];
+
+  /** Every image `docs/make-doc-images.mjs` is expected to produce. */
+  const COMMITTED_IMAGES = [...COMMITTED_PNGS, ...COMMITTED_GIFS].sort();
 
   /** Markdown image references, as [altText, path] pairs. */
   function imageReferences(markdown: string): Array<[string, string]> {
@@ -545,10 +551,64 @@ describe('the documentation images', () => {
     // exists and renders as nothing. Check the signature and a size floor
     // rather than the exact bytes, which are not reproducible across
     // Chromium builds.
-    for (const file of COMMITTED_IMAGES) {
+    for (const file of COMMITTED_PNGS) {
       const bytes = readFileSync(join(REPO_ROOT, 'docs', 'images', file));
       expect([...bytes.subarray(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
       expect(bytes.byteLength).toBeGreaterThan(4096);
+    }
+  });
+
+  it('holds a real GIF in every animated file, under the README size budget', () => {
+    // A 600 KB ceiling per file, because the front page loads both of them
+    // before the reader has asked for anything.
+    for (const file of COMMITTED_GIFS) {
+      const bytes = readFileSync(join(REPO_ROOT, 'docs', 'images', file));
+      expect(bytes.subarray(0, 6).toString('latin1')).toBe('GIF89a');
+      expect(bytes.byteLength).toBeGreaterThan(4096);
+      expect(bytes.byteLength).toBeLessThan(600 * 1024);
+    }
+  });
+
+  it('animates every GIF, so a single-frame still cannot pass as one', () => {
+    // Each frame of an animated GIF is preceded by a Graphic Control
+    // Extension (0x21 0xF9 0x04), so one marker means one frame, which is
+    // what a mis-saved GIF looks like.
+    for (const file of COMMITTED_GIFS) {
+      const bytes = readFileSync(join(REPO_ROOT, 'docs', 'images', file));
+      let markers = 0;
+      for (let at = 0; at < bytes.byteLength - 2; at += 1) {
+        if (bytes[at] === 0x21 && bytes[at + 1] === 0xf9 && bytes[at + 2] === 0x04) {
+          markers += 1;
+        }
+      }
+
+      expect(markers).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('loops every GIF, so the motion does not stop after one pass', () => {
+    // The loop count lives in the NETSCAPE2.0 application extension; with
+    // no such block a viewer plays the file once and leaves the last frame.
+    for (const file of COMMITTED_GIFS) {
+      const bytes = readFileSync(join(REPO_ROOT, 'docs', 'images', file));
+      expect(bytes.toString('latin1')).toContain('NETSCAPE2.0');
+    }
+  });
+
+  it('keeps the still walk strip as the fallback for the walk GIF', () => {
+    // A reader whose viewer does not play a GIF still has to be able to see
+    // that the rig moves, so the three stills are not replaced by the loop.
+    const walk = ['generated-walk.png', 'generated-walk.gif'];
+
+    for (const file of walk) {
+      expect(existsSync(join(REPO_ROOT, 'docs', 'images', file))).toBe(true);
+    }
+
+    for (const readme of READMES) {
+      const referenced = imageReferences(read(readme)).map(([, path]) => path);
+      for (const file of walk) {
+        expect(referenced).toContain(`docs/images/${file}`);
+      }
     }
   });
 

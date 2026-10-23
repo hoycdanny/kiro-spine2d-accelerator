@@ -35,6 +35,12 @@
 把各部位打包成 atlas，並寫出骨架 JSON。上面那張圖就是這條路徑的頭尾。
 它不需要 Spine 授權，因為它從來沒有啟動 Spine。
 
+![由那個 PSD 生成的角色動起來的循環動畫，雙臂在一秒內往下擺再擺回來](docs/images/hero-wave.gif)
+
+*同一個生成出來的 rig 動起來的樣子：demo 裡 1.00 秒 `wave` 的 20 格，由 `render_preview`
+從 `generated/hero-animated.json` 與旁邊的 atlas 渲染，每格 50 毫秒。
+每一個像素都來自那個以程式繪製的 PSD，而 Spine 編輯器從來沒有被打開。*
+
 ![十六個以 attachment 命名的獨立 PNG 檔，排成四乘四並標上檔名](docs/images/attachment-images.png)
 
 *`generated/images/` 資料夾：每個 attachment 一個 PNG，檔名就是 attachment 名稱。
@@ -73,6 +79,11 @@
 這個檔案內嵌了 Spine Runtimes，所以把它交給任何人都需要你自己的 Spine 授權，見 [授權](#授權)。*
 
 ### 用來審 rig 的占位動作
+
+![生成的 walk 以循環播放，雙腿一步一步跨出去再收回來](docs/images/generated-walk.gif)
+
+*`skeleton_animate` 寫出的 `walk` 範本，1.00 秒循環的全部 20 格。
+下面那張三格圖是同一段動作，給不會播 GIF 的閱讀環境看的。*
 
 ![生成的 walk 在 0.00、0.25、0.50 秒的三格渲染圖，腿部正在跨出一步](docs/images/generated-walk.png)
 
@@ -345,7 +356,7 @@ npm run docs:images        # node docs/make-doc-images.mjs
 
 它會跑 `demo/run-demo.js`、透過 stdio 驅動 server 產生那段 walk、
 在 Chromium 裡截圖 `demo/out/preview/hero.html`，再用 Pillow
-（[`docs/compose-doc-images.py`](docs/compose-doc-images.py)）合成帶標籤的圖。
+（[`docs/compose-doc-images.py`](docs/compose-doc-images.py)）合成帶標籤的圖與兩個循環 GIF。
 加上 `--skip-demo` 可以沿用既有的 `demo/out/`。它需要 demo 需要的一切，
 所以它會直接失敗，而不是留下一組只重建了一半的圖。
 它不讀任何外部美術素材：每一個像素都起自 `demo/make-sample-psd.py` 或由它渲染出的畫格。
