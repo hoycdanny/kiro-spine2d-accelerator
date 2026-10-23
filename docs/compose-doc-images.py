@@ -17,6 +17,7 @@ Usage, one subcommand per image shape:
     psd-flat --psd P --out O [--height N]
     strip    --out O [--height N] [--trim] --panel PATH LABEL [--panel PATH LABEL ...]
     grid     --out O --dir D [--cell N] [--cols N]
+    animate  --out O --dir D [--height N] [--label TEXT] [--duration-ms N] [--max-bytes N]
 """
 
 from __future__ import annotations
@@ -135,6 +136,87 @@ def strip(
     canvas.save(out)
 
 
+def animate(
+    directory: Path,
+    out: Path,
+    height: int,
+    label: str,
+    duration_ms: int,
+    max_bytes: int,
+) -> None:
+    """Every PNG in `directory` as one looping GIF on a single labelled card.
+
+    The still strips show three moments and leave the reader to imagine the
+    rest; this is the same frames played back. Card geometry is `strip`'s, so
+    a frame of the GIF looks like one of its panels.
+
+    No per-frame trim, for `strip`'s reason: cropping each frame to its own
+    art would cancel out the movement the file exists to show.
+    """
+    paths = sorted(directory.glob("*.png"))
+    if not paths:
+        raise SystemExit(f"no PNGs in {directory}")
+
+    frames: list[Image.Image] = []
+    for path in paths:
+        rendered = Image.open(path).convert("RGBA")
+        # Flatten onto the card colour before scaling: a transparent edge
+        # pixel scaled on its own blends towards nothing and leaves a light
+        # halo once it lands on the card.
+        stage = Image.new("RGBA", rendered.size, IMAGE_BG)
+        stage.alpha_composite(rendered)
+        frames.append(_scaled_to_height(stage, height))
+
+    cell_w = max(frame.width for frame in frames)
+    panel_w = cell_w + 2 * INNER
+    panel_h = height + 2 * INNER + LABEL_H
+    size = (PAD * 2 + panel_w, PAD * 2 + panel_h)
+
+    cards: list[Image.Image] = []
+    for frame in frames:
+        canvas = Image.new("RGBA", size, PAGE_BG)
+        _card(canvas, (PAD, PAD, PAD + panel_w - 1, PAD + height + 2 * INNER - 1))
+        canvas.alpha_composite(
+            frame,
+            (PAD + INNER + (cell_w - frame.width) // 2, PAD + INNER),
+        )
+        _label(canvas, label, PAD, PAD + height + 2 * INNER, panel_w)
+        cards.append(canvas.convert("RGB"))
+
+    # One palette for the whole file, taken from every frame at once. A
+    # per-frame palette shifts the shading colours between frames, which
+    # reads as a flicker. Dithering is off because the shading is smooth and
+    # the speckle it adds costs bytes for nothing.
+    montage = Image.new("RGB", (size[0], size[1] * len(cards)))
+    for index, card in enumerate(cards):
+        montage.paste(card, (0, index * size[1]))
+    shared = montage.quantize(colors=256, method=Image.Quantize.MEDIANCUT)
+
+    quantized = [
+        card.quantize(palette=shared, dither=Image.Dither.NONE) for card in cards
+    ]
+
+    out.parent.mkdir(parents=True, exist_ok=True)
+    quantized[0].save(
+        out,
+        save_all=True,
+        append_images=quantized[1:],
+        duration=duration_ms,
+        loop=0,
+        # optimize=True rewrites the palette per frame, undoing the shared one.
+        optimize=False,
+        disposal=1,
+    )
+
+    written = out.stat().st_size
+    print(f"{len(quantized)} frames, {written} bytes")
+    if written > max_bytes:
+        raise SystemExit(
+            f"{out} is {written} bytes, over the {max_bytes} byte budget. "
+            "Render fewer frames before making the canvas smaller."
+        )
+
+
 def grid(directory: Path, out: Path, cell: int, cols: int) -> None:
     """Every PNG in `directory`, at one shared scale, each under its name.
 
@@ -214,6 +296,14 @@ def main() -> int:
     sheet.add_argument("--cell", type=int, default=104)
     sheet.add_argument("--cols", type=int, default=4)
 
+    loop = subcommands.add_parser("animate")
+    loop.add_argument("--out", type=Path, required=True)
+    loop.add_argument("--dir", type=Path, required=True)
+    loop.add_argument("--height", type=int, default=240)
+    loop.add_argument("--label", default="")
+    loop.add_argument("--duration-ms", type=int, default=50)
+    loop.add_argument("--max-bytes", type=int, default=614400)
+
     args = parser.parse_args()
 
     if args.command == "psd-flat":
@@ -224,6 +314,15 @@ def main() -> int:
             args.out,
             args.height,
             args.trim,
+        )
+    elif args.command == "animate":
+        animate(
+            args.dir,
+            args.out,
+            args.height,
+            args.label,
+            args.duration_ms,
+            args.max_bytes,
         )
     else:
         grid(args.dir, args.out, args.cell, args.cols)

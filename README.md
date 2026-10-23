@@ -39,6 +39,12 @@ bone chain with pivots at the joint edges, packs the parts into an atlas, and wr
 JSON. The image above is that path end to end. It needs no Spine licence, because it never launches
 Spine.
 
+![The character generated from that PSD moving in a loop, both arms swinging down and back up through a one-second wave](docs/images/hero-wave.gif)
+
+*The same generated rig in motion: 20 frames of the demo's 1.00 s `wave`, rendered by
+`render_preview` from `generated/hero-animated.json` and the atlas next to it, at 50 ms a frame.
+Every pixel comes from the procedurally drawn PSD, and the Spine editor was never opened.*
+
 ![Sixteen loose PNG files, one per attachment, labelled with their file names in a four by four grid](docs/images/attachment-images.png)
 
 *The `generated/images/` folder: one PNG per attachment, named after it. This is the folder that
@@ -80,6 +86,11 @@ an animation selector, speed, loop and a debug-bones toggle. Here it is paused a
 your own Spine licence; see [Licensing](#licensing).*
 
 ### Placeholder motion to review the rig with
+
+![The generated walk playing as a loop, the legs stepping forward and back through a full stride](docs/images/generated-walk.gif)
+
+*The `walk` template written by `skeleton_animate`, all 20 frames of its 1.00 s loop. The three
+stills below are the same animation, for a reader whose viewer does not play a GIF.*
 
 ![Three rendered frames of a generated walk at 0.00, 0.25 and 0.50 seconds, showing the legs swinging through a stride](docs/images/generated-walk.png)
 
@@ -195,6 +206,9 @@ without Chromium it skips the three visual steps and says so.
 [`demo/README.md`](demo/README.md) is the walk-through, with what to say at each step
 ([繁體中文](demo/README_ZH.md) · [简体中文](demo/README_CN.md) · [日本語](demo/README_JP.md) ·
 [한국어](demo/README_KR.md)).
+
+[`docs/USAGE.md`](docs/USAGE.md) — **Using the Spine 2D Power**, the detailed guide: the three ways
+to drive it, four end-to-end walk-throughs, the real argument schemas, and troubleshooting. English only.
 
 ## The 22 tools
 
@@ -347,7 +361,7 @@ tests/                unit, property and integration tests
 
 ```bash
 npm run typecheck
-npm test                         # 41 suites, 915 tests
+npm test                         # 41 suites, 930 tests
 npm run test:unit
 npm run test:integration         # exercises the real Spine CLI and real Chromium when present
 uv run --project python pytest   # 89 tests
@@ -367,7 +381,8 @@ npm run docs:images        # node docs/make-doc-images.mjs
 ```
 
 It runs `demo/run-demo.js`, drives the server over stdio for the generated walk, screenshots
-`demo/out/preview/hero.html` in Chromium, and composes the labelled strips with Pillow
+`demo/out/preview/hero.html` in Chromium, and composes the labelled strips and the two looping
+GIFs with Pillow
 ([`docs/compose-doc-images.py`](docs/compose-doc-images.py)). Pass `--skip-demo` to reuse an
 existing `demo/out/`. It needs everything the demo needs, so it fails rather than committing a
 half-regenerated set. No external artwork is read: every pixel starts in
