@@ -356,7 +356,7 @@ tests/                단위·속성·통합 테스트
 
 ```bash
 npm run typecheck
-npm test                         # 41개 스위트, 930개 테스트
+npm test                         # 41개 스위트, 931개 테스트
 npm run test:unit
 npm run test:integration         # Spine CLI와 Chromium이 있으면 실제로 실행합니다
 uv run --project python pytest   # 89개 테스트

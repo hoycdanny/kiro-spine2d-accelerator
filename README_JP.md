@@ -362,7 +362,7 @@ tests/                ユニット、プロパティ、統合テスト
 
 ```bash
 npm run typecheck
-npm test                         # 41 スイート、930 テスト
+npm test                         # 41 スイート、931 テスト
 npm run test:unit
 npm run test:integration         # Spine CLI と Chromium が存在すれば実際に実行します
 uv run --project python pytest   # 89 テスト

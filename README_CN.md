@@ -339,7 +339,7 @@ tests/                unit、property、integration 测试
 
 ```bash
 npm run typecheck
-npm test                         # 41 个 suite、930 个测试
+npm test                         # 41 个 suite、931 个测试
 npm run test:unit
 npm run test:integration         # 已安装时会实际运行 Spine CLI 与 Chromium
 uv run --project python pytest   # 89 个测试

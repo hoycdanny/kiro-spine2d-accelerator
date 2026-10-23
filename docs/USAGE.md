@@ -1,7 +1,7 @@
 # Using the Spine 2D Power
 
 > **This guide is English only.** The five READMEs are maintained in parallel in five languages;
-> this guide is not. It is roughly 900 lines of worked examples, flag tables and error strings, and
+> this guide is not. It is a long file of worked examples, flag tables and error strings, and
 > a half-translated copy of that would be worse than an honest single-language one. Everything here
 > is additional detail: the setup, the tool list and the honest limits are in the READMEs, in every
 > language.
@@ -203,14 +203,40 @@ that name. A skeleton with no atlas next to it is still linted, with the atlas r
 `note:` line saying so. That note is worth reading in CI output: half a lint is easy to mistake for
 a whole one.
 
-`--rules` is repeatable and overlays the defaults in order:
+`--rules` is repeatable and overlays the defaults in order. With the two shipped rule files, on the
+same demo workspace:
 
-```bash
-node dist/ci-cli.js lint --export-dir export \
-  --rules templates/lint-rules/naming.json \
-  --rules templates/lint-rules/budgets.json \
-  --fail-on error
 ```
+> node dist/ci-cli.js lint --export-dir demo/out/generated --rules templates/lint-rules/naming.json --rules templates/lint-rules/budgets.json --fail-on error
+PASS lint demo\out\generated\hero-animated.json
+    0 error(s), 1 warning(s), 0 info — gate passed (failOn: error).
+    WARNING:
+      animation/empty [setup]: Animation "setup" has no timelines.
+        fix: Delete it, or confirm it exists on purpose as an empty animation used to clear a track.
+    Atlas rules were skipped: pass `atlas` to check region coverage, premultiplied alpha and packing efficiency.
+
+    note: no atlas found beside hero-animated; atlas rules were skipped
+
+PASS lint demo\out\generated\hero.json
+    0 error(s), 1 warning(s), 0 info — gate passed (failOn: error).
+    WARNING:
+      animation/empty [setup]: Animation "setup" has no timelines.
+        fix: Delete it, or confirm it exists on purpose as an empty animation used to clear a track.
+    Atlas checked: ...\demo\out\generated\hero.atlas
+
+> echo $LASTEXITCODE
+0
+```
+
+The two shipped files are editable copies of the built-in defaults, so overlaying them changes
+nothing by itself — that is the point of starting from them. Edit a pattern or a budget and the
+overlaid value is what the gate enforces.
+
+One family of files is never linted even though it sits in the export directory:
+`skeleton_document` writes `<stem>.spine-doc.json` and `<stem>.spine-doc.md` beside the skeleton it
+documents, and `findExportPairs` skips the `.json` the same way it skips `*.export.json`,
+`*.pack.json` and `baseline.json`. None of them is exported skeleton data. A genuinely malformed
+export still fails loudly.
 
 The `export` subcommand is **UNVERIFIED here**: it needs a licensed Spine editor and this machine
 has a trial, so it was not run. Its flags above come from the `USAGE` constant and its behaviour

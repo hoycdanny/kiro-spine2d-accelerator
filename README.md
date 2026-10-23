@@ -361,7 +361,7 @@ tests/                unit, property and integration tests
 
 ```bash
 npm run typecheck
-npm test                         # 41 suites, 930 tests
+npm test                         # 41 suites, 931 tests
 npm run test:unit
 npm run test:integration         # exercises the real Spine CLI and real Chromium when present
 uv run --project python pytest   # 89 tests
