@@ -11,6 +11,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.test.json",
     "demo": "node demo/run-demo.js",
+    "docs:images": "node docs/make-doc-images.mjs",
     "test": "jest",
     "test:unit": "jest --testPathPattern=tests/unit",
     "test:property": "jest --testPathPattern=tests/property",
