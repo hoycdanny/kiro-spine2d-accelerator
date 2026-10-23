@@ -201,6 +201,9 @@ Unity 스캐폴드, 라이선스 거부, 그리고 자체 완결 HTML 페이지.
 ([English](demo/README.md) · [繁體中文](demo/README_ZH.md) · [简体中文](demo/README_CN.md) ·
 [日本語](demo/README_JP.md)).
 
+[`docs/USAGE.md`](docs/USAGE.md) — **Using the Spine 2D Power**, 상세 사용 가이드입니다: 구동하는
+세 가지 방법, 네 가지 엔드투엔드 작업 흐름, 실제 인자 스키마, 문제 해결 표. **영어만 제공됩니다**.
+
 ## 22개 도구
 
 ### CLI 오케스트레이션
@@ -353,7 +356,7 @@ tests/                단위·속성·통합 테스트
 
 ```bash
 npm run typecheck
-npm test                         # 41개 스위트, 915개 테스트
+npm test                         # 41개 스위트, 930개 테스트
 npm run test:unit
 npm run test:integration         # Spine CLI와 Chromium이 있으면 실제로 실행합니다
 uv run --project python pytest   # 89개 테스트

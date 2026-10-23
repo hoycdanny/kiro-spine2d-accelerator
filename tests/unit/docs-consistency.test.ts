@@ -441,7 +441,7 @@ describe('skeleton intelligence tools are documented honestly', () => {
   it('claims no artist quality anywhere', () => {
     const offenders: string[] = [];
 
-    for (const file of ['POWER.md', ...READMES]) {
+    for (const file of ['POWER.md', 'docs/USAGE.md', ...READMES]) {
       for (const label of claimsIn(read(file))) offenders.push(`${file}: ${label}`);
     }
 
@@ -482,7 +482,11 @@ describe('skeleton intelligence tools are documented honestly', () => {
     // translations explain it in their own language and quote the English
     // sentence as the literal tool output, which is how every other tool
     // string is handled in those files.
-    const missing = ['POWER.md', ...READMES].filter((file) => !read(file).includes(note));
+    // docs/USAGE.md quotes it twice: once as the real summary line a run
+    // printed, and once as the sentence the tool prints with every result.
+    const missing = ['POWER.md', 'docs/USAGE.md', ...READMES].filter(
+      (file) => !read(file).includes(note),
+    );
     expect(missing).toEqual([]);
   });
 
@@ -749,5 +753,105 @@ describe('the Chromium install command', () => {
     ).map((file) => relative(REPO_ROOT, file));
 
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('the usage guide', () => {
+  // docs/USAGE.md quotes command lines, flag names, defaults and error
+  // strings out of the source. Every assertion below reads the source side
+  // from the source, so editing the code fails here rather than letting the
+  // guide describe a version of the tool that no longer exists.
+  const READMES = ['README.md', 'README_ZH.md', 'README_CN.md', 'README_JP.md', 'README_KR.md'];
+  const GUIDE_PATH = join(REPO_ROOT, 'docs', 'USAGE.md');
+
+  it('exists', () => {
+    expect(existsSync(GUIDE_PATH)).toBe(true);
+  });
+
+  // Read tolerantly: a missing guide has to fail the cases below as
+  // assertions, not as a collection error that reports zero tests run.
+  const USAGE_GUIDE = existsSync(GUIDE_PATH) ? readFileSync(GUIDE_PATH, 'utf8') : '';
+
+  it('is linked from every README language', () => {
+    // The link is the only way a reader of a translated README finds it, so
+    // the literal path is asserted rather than the surrounding sentence.
+    for (const file of READMES) {
+      expect(read(file)).toContain('docs/USAGE.md');
+    }
+  });
+
+  it('has no half-translated sibling', () => {
+    // The guide is deliberately English-only. A docs/USAGE_ZH.md that lags
+    // behind it is worse than no translation, so its appearance fails here
+    // instead of quietly becoming four more documents to maintain.
+    const siblings = readdirSync(join(REPO_ROOT, 'docs')).filter((entry) =>
+      /^USAGE_.*\.md$/i.test(entry),
+    );
+    expect(siblings).toEqual([]);
+  });
+
+  it('resolves every relative link it carries', () => {
+    // Links in docs/USAGE.md are resolved by GitHub relative to docs/, so
+    // that is what they are resolved against here.
+    const broken: string[] = [];
+
+    for (const match of USAGE_GUIDE.matchAll(/\[[^\]]*\]\(([^)\s]+)\)/g)) {
+      const target = match[1]!;
+      if (/^(https?:|mailto:|#)/.test(target)) continue;
+      const path = target.split('#')[0]!;
+      if (path.length === 0) continue;
+      if (!existsSync(join(REPO_ROOT, 'docs', path))) broken.push(target);
+    }
+
+    expect(broken).toEqual([]);
+  });
+
+  it('reproduces the four ci-cli usage lines verbatim', () => {
+    // The USAGE constant in src/ci-cli.ts is the authoritative flag list.
+    // Comparing against it, rather than against a copy pasted into this
+    // test, is what makes a new flag fail the suite.
+    const cli = read('src', 'ci-cli.ts');
+    const lines = [...cli.matchAll(/^ {2}node dist\/ci-cli\.js .*$/gm)].map(
+      (match) => match[0]!,
+    );
+
+    expect(lines).toHaveLength(4);
+    const missing = lines.filter((line) => !USAGE_GUIDE.includes(line));
+    expect(missing).toEqual([]);
+  });
+
+  it('states the exit codes the CLI actually uses', () => {
+    // A pipeline that treats 1 and 2 alike ships a broken asset the day a
+    // path is mistyped, so the three meanings are spelled out in the guide.
+    expect(USAGE_GUIDE).toContain('0 pass, 1 gate failed, 2 usage or operational error');
+  });
+
+  it('quotes the skeleton_document defaults that are in the source', () => {
+    const source = read('src', 'tools', 'doc-tools.ts');
+    const defaults: Array<[string, string]> = [
+      ['probeRotationDegrees', 'probeRotationDegrees ?? 20'],
+      ['maxProbes', 'maxProbes ?? 256'],
+      ['probeWidth', 'probeWidth ?? 256'],
+    ];
+
+    for (const [name, expression] of defaults) {
+      expect(source).toContain(expression);
+      const value = expression.split('?? ')[1]!;
+      // The guide's argument table carries the name and its default on one
+      // row, which is the shape this asserts.
+      expect(USAGE_GUIDE).toMatch(new RegExp(`\`${name}\`[^\\n]*\`${value}\``));
+    }
+  });
+
+  it('names all five animation templates', () => {
+    const source = read('src', 'animation-templates.ts');
+    const declared = /export const TEMPLATE_NAMES = \[([^\]]+)\]/.exec(source);
+
+    expect(declared).not.toBeNull();
+    const names = [...declared![1]!.matchAll(/'([a-z_]+)'/g)].map((match) => match[1]!);
+    expect(names).toHaveLength(5);
+
+    const missing = names.filter((name) => !USAGE_GUIDE.includes(`\`${name}\``));
+    expect(missing).toEqual([]);
   });
 });

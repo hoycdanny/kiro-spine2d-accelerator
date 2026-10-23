@@ -192,6 +192,9 @@ node demo/run-demo.js        # 或：npm run demo
 （[English](demo/README.md) · [简体中文](demo/README_CN.md) · [日本語](demo/README_JP.md) ·
 [한국어](demo/README_KR.md)）。
 
+[`docs/USAGE.md`](docs/USAGE.md) — **Using the Spine 2D Power**，詳細使用指南：三種驅動方式、
+四個端到端走查、真正的參數結構與疑難排解表。**僅有英文版**。
+
 ## 22 個工具
 
 ### CLI 編排
@@ -336,7 +339,7 @@ tests/                unit、property、integration 測試
 
 ```bash
 npm run typecheck
-npm test                         # 41 個 suite、915 個測試
+npm test                         # 41 個 suite、930 個測試
 npm run test:unit
 npm run test:integration         # 有安裝時會實際跑 Spine CLI 與 Chromium
 uv run --project python pytest   # 89 個測試

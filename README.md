@@ -207,6 +207,9 @@ without Chromium it skips the three visual steps and says so.
 ([繁體中文](demo/README_ZH.md) · [简体中文](demo/README_CN.md) · [日本語](demo/README_JP.md) ·
 [한국어](demo/README_KR.md)).
 
+[`docs/USAGE.md`](docs/USAGE.md) — **Using the Spine 2D Power**, the detailed guide: the three ways
+to drive it, four end-to-end walk-throughs, the real argument schemas, and troubleshooting. English only.
+
 ## The 22 tools
 
 ### CLI orchestration
@@ -358,7 +361,7 @@ tests/                unit, property and integration tests
 
 ```bash
 npm run typecheck
-npm test                         # 41 suites, 915 tests
+npm test                         # 41 suites, 930 tests
 npm run test:unit
 npm run test:integration         # exercises the real Spine CLI and real Chromium when present
 uv run --project python pytest   # 89 tests

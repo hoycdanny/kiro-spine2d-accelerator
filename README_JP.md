@@ -204,6 +204,9 @@ PSD からリグ、検査と lint、意味的な差分、4 フレームの描画
 （[English](demo/README.md) · [繁體中文](demo/README_ZH.md) · [简体中文](demo/README_CN.md) ·
 [한국어](demo/README_KR.md)）。
 
+[`docs/USAGE.md`](docs/USAGE.md) — **Using the Spine 2D Power**。詳細ガイドです: 3 つの駆動方法、
+4 つのエンドツーエンドの手順、実際の引数スキーマ、トラブルシューティング表。**英語のみ**。
+
 ## 22 個のツール
 
 ### CLI オーケストレーション
@@ -359,7 +362,7 @@ tests/                ユニット、プロパティ、統合テスト
 
 ```bash
 npm run typecheck
-npm test                         # 41 スイート、915 テスト
+npm test                         # 41 スイート、930 テスト
 npm run test:unit
 npm run test:integration         # Spine CLI と Chromium が存在すれば実際に実行します
 uv run --project python pytest   # 89 テスト
