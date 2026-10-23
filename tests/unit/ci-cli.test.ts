@@ -65,6 +65,9 @@ describe('file discovery', () => {
     writeFileSync(join(dir, 'export', 'unity.export.json'), '{}');
     writeFileSync(join(dir, 'export', 'atlas.pack.json'), '{}');
     writeFileSync(join(dir, 'baseline', 'walk', 'baseline.json'), '{}');
+    // skeleton_document writes these beside the skeleton it documents.
+    writeFileSync(join(dir, 'export', 'hero.spine-doc.json'), '{}');
+    writeFileSync(join(dir, 'export', 'nested', 'boss.spine-doc.json'), '{}');
   });
 
   afterAll(() => {
@@ -102,6 +105,13 @@ describe('file discovery', () => {
   it('ignores settings files and baseline manifests', () => {
     const names = findExportPairs(join(dir, 'export')).map((pair) => pair.name);
     expect(names.sort()).toEqual(['boss', 'hero', 'lonely']);
+  });
+
+  it('ignores the documents skeleton_document writes beside a skeleton', () => {
+    // Otherwise the lint gate fails on this project's own output.
+    const names = findExportPairs(join(dir, 'export')).map((pair) => pair.name);
+    expect(names).not.toContain('hero.spine-doc');
+    expect(names).not.toContain('boss.spine-doc');
   });
 
   it('lists baseline subdirectories', () => {

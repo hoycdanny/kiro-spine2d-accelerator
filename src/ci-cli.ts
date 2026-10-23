@@ -130,8 +130,12 @@ export function findExportPairs(exportDir: string): ExportPair[] {
   const pairs: ExportPair[] = [];
   for (const file of files) {
     if (extname(file).toLowerCase() !== '.json') continue;
-    // Settings files live next to artifacts; skip the obvious ones.
+    // Settings files and this project's own generated documents live next to
+    // artifacts; skip the file families we knowingly write there. A
+    // `*.spine-doc.json` is written by skeleton_document beside the skeleton it
+    // documents, so linting it as an export would fail the gate on our own output.
     if (/\.(export|pack)\.json$/i.test(file)) continue;
+    if (/\.spine-doc\.json$/i.test(file)) continue;
     if (basename(file) === 'baseline.json') continue;
 
     const stem = basename(file, '.json');
